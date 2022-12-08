@@ -1,0 +1,7 @@
+{
+    "name": "Go WASM",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    }
+}
