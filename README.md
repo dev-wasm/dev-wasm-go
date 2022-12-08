@@ -1,4 +1,4 @@
-# Devcontainer WASM-TS
+# Devcontainer WASM-Go
 Simple devcontainer for Go development
 
 # Usage
@@ -22,6 +22,6 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 # Building and Running
 
 ```sh
-./build.sh
+tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
 wasmtime main.wasm
 ```
