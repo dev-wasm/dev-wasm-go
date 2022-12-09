@@ -26,5 +26,5 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 
 ```sh
 tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
-wasmtime main.wasm
+wasmtime main.wasm --dir .
 ```
