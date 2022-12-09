@@ -1,4 +1,4 @@
-FROM brendanburns/wasm-dev-base:0.0.1
+FROM brendanburns/wasm-dev-base:0.0.2
 
 ENV TINY_GO_VERSION=0.26.0
 ENV GOLANG_VERSION=1.19.3
