@@ -24,7 +24,14 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 
 # Building and Running
 
+## Simple example
 ```sh
 tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
 wasmtime main.wasm --dir .
+```
+
+## WAGI web serving
+```sh
+tinygo build -wasm-abi=generic -target=wasi -o wagi.wasm wagi.go
+wagi --config wagi.toml
 ```
