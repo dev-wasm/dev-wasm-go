@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Go",
+            "type": "shell",
+            "command": "tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+    ]
+}
