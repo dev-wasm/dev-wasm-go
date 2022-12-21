@@ -30,8 +30,14 @@ tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
 wasmtime main.wasm --dir .
 ```
 
-## WAGI web serving
+## WASM CGI web serving with lighttpd
+There is a simple example of web serving via WebAssembly + CGI (WAGI) in
+the `webserver` directory. It uses the lighttpd web server and `mod_cgi`.
+See the `webserver/lighttpd.conf` file for more details.
+
 ```sh
-tinygo build -wasm-abi=generic -target=wasi -o wagi.wasm wagi.go
-wagi --config wagi.toml
+tinygo build -wasm-abi=generic -target=wasi -o wagi.wasm webserver/wagi.go
+lighttpd -D -f webserver/lighttpd.conf
 ```
+
+Once the server is running, VS Code or Codespaces should prompt you to connect to the open port.
