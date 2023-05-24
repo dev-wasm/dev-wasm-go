@@ -4,5 +4,11 @@
         "dockerfile": "Dockerfile",
         "context": ".."
     },
+    "features": {
+        "devwasm.azurecr.io/dev-wasm/dev-wasm-feature/wasmtime-wasi:0.0.8": {
+            "version": "20"
+        },
+        "ghcr.io/devcontainers/features/common-utils": {}
+    },
     "remoteEnv": { "GOROOT": "/usr/local/go" }
 }
