@@ -8,18 +8,22 @@ Use at your own risk, things are likely to change drastically in the future.
 tinygo build -wasm-abi=generic -target=wasi -o main.wasm
 ```
 
-## Running without allowed hosts
-When you first run this client with `wasmtime-http` no hosts are allowed and so you will see an error.
-
+## Running
 ```sh
-$ wasmtime-http --wasi-modules=experimental-wasi-http main.wasm
-Request error: (Response error: (7))
+wasmtime --wasi-modules=experimental-wasi-http main.wasm
 ```
 
-By default the WASI-http runtime blocks all URLs, to open up the URL, use the `WASI_HTTP_ALLOWED_HOSTS` environment variable:
-
+## Regenerating the code 
 ```sh
-$ WASI_HTTP_ALLOWED_HOSTS=https://postman-echo.com wasmtime-http --wasi-modules=experimental-wasi-http main.wasm 
-Request status: 200
-{"args":{},"headers":{"x-forwarded-proto":"https","x-forwarded-port":"443","host":"postman-echo.com","x-amzn-trace-id":"Root=1-63acc681-2d199daa326ef03d7923f2c4","content-length":"0","content-type":"text/html","user-agent":"wasm32-wasi-http","accept":"*/*"},"url":"https://postman-echo.com/get"}
+git clone https://github.com/WebAssembly/wasi-http
+cd wasi-http
+git checkout 6c6855a
+cd ../
+wit-bindgen tiny-go wasi-http/wit -w proxy --out-dir proxy
 ```
+
+Note that there is currently a bug in `wit-bindgen` which prevents this from working
+correctly, it needs a small edit to add a `typedef`.
+
+TODO: extract this out into a general purpose library
+
