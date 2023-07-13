@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
@@ -27,23 +31,54 @@ func printResponse(r *http.Response) {
 	fmt.Printf("Body: \n%s\n", body)
 }
 
-func request() {
+type RequestCount struct {
+	Count int
+}
+
+func makeBuffer(count int) io.Reader {
+	body := fmt.Sprintf("[{\"key\": \"count\", \"value\": %d}]", count)
+	return bytes.NewBuffer([]byte(body))
+}
+
+func request() int {
 	client := http.Client{
 		Transport: wasiclient.WasiRoundTripper{},
 	}
-	res, err := client.Get("https://postman-echo.com/get")
+	res, err := client.Get("http://127.0.0.1:3500/v1.0/state/inmemory/count")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer res.Body.Close()
+	count := 0
+	if res.StatusCode == http.StatusOK {
+		data, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			panic(err.Error())
+		}
+		count, err = strconv.Atoi(string(data))
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+	count = count + 1
+	res, err = client.Post("http://127.0.0.1:3500/v1.0/state/inmemory", "application/json", makeBuffer(count))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	printResponse(res)
+	return count
 }
 
 // handleRequest serves a static response from the Dapr sidecar.
 func handleRequest(req api.Request, resp api.Response) (next bool, reqCtx uint32) {
-	request()
+	if uri := req.GetURI(); !strings.HasPrefix(uri, "/wasm") {
+		next = true
+		return
+	}
 
+	count := request()
 	// Serve a response that shows the invoked request URI.
 	resp.Headers().Set("Content-Type", "text/plain")
-	resp.Body().WriteString("hello with requests! " + req.GetURI())
-	return // skip any downstream middleware, as we wrote a response.
+	resp.Body().WriteString(fmt.Sprintf("hello with requests! %s %d", req.GetURI(), count))
+	return
 }
