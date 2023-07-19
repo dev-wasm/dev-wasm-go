@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	wasiclient "github.com/dev-wasm/dev-wasm-go/client"
+	wasiclient "github.com/dev-wasm/dev-wasm-go/client/http"
 )
 
 func printResponse(r *http.Response) {
