@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dev-wasm/dev-wasm-go/proxy"
+	"github.com/dev-wasm/dev-wasm-go/http/proxy"
 )
 
 type bytesReaderCloser struct {
