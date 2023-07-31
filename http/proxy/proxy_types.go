@@ -1,9 +1,5 @@
 package proxy
 
-import (
-  "fmt"
-)
-
 // inspired from https://github.com/moznion/go-optional
 
 type optionKind int
@@ -86,8 +82,7 @@ func (r Result[T, E]) IsErr() bool {
 
 func (r Result[T, E]) Unwrap() T {
   if r.Kind != Ok {
-    data := fmt.Sprintf("Result is err: %v", r.Err)
-    panic(data)
+    panic("Result is Err")
   }
   return r.Val
 }
