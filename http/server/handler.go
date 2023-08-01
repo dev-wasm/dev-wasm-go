@@ -29,15 +29,15 @@ func (w *wasmResponseWriter) Write(data []byte) (int, error) {
 	return w.body.Write(data)
 }
 
-func methodToString(method proxy.TypesMethod) string {
+func methodToString(method proxy.WasiHttpTypesMethod) string {
 	switch method.Kind() {
-	case proxy.TypesMethodKindGet:
+	case proxy.WasiHttpTypesMethodKindGet:
 		return "GET"
-	case proxy.TypesMethodKindPut:
+	case proxy.WasiHttpTypesMethodKindPut:
 		return "PUT"
-	case proxy.TypesMethodKindPost:
+	case proxy.WasiHttpTypesMethodKindPost:
 		return "POST"
-	case proxy.TypesMethodKindDelete:
+	case proxy.WasiHttpTypesMethodKindDelete:
 		return "DELETE"
 	default:
 		panic("unsupported method")
@@ -45,10 +45,11 @@ func methodToString(method proxy.TypesMethod) string {
 }
 
 func (h *handler) Handle(req uint32, responseOut uint32) {
-	path := proxy.TypesIncomingRequestPath(req)
-	method := proxy.TypesIncomingRequestMethod(req)
+	pathAndQuery := proxy.WasiHttpTypesIncomingRequestPathWithQuery(req).Unwrap()
+	method := proxy.WasiHttpTypesIncomingRequestMethod(req)
 
-	goReq, err := http.NewRequest(methodToString(method), path, &bytes.Buffer{})
+
+	goReq, err := http.NewRequest(methodToString(method), pathAndQuery, &bytes.Buffer{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -59,38 +60,38 @@ func (h *handler) Handle(req uint32, responseOut uint32) {
 	}
 	h.handler.ServeHTTP(&goRes, goReq)
 
-	headers := []proxy.TypesTuple2StringStringT{}
+	headers := []proxy.WasiHttpTypesTuple2StringStringT{}
 	for key, val := range goRes.header {
 		for ix := range val {
-			headers = append(headers, proxy.TypesTuple2StringStringT{
+			headers = append(headers, proxy.WasiHttpTypesTuple2StringStringT{
 				F0: key,
 				F1: val[ix],
 			})
 		}
 	}
 
-	f := proxy.TypesNewFields(headers)
+	f := proxy.WasiHttpTypesNewFields(headers)
 
-	res := proxy.TypesNewOutgoingResponse(uint16(goRes.code), f)
+	res := proxy.WasiHttpTypesNewOutgoingResponse(uint16(goRes.code), f)
 
-	result := proxy.Result[uint32, proxy.TypesError]{
+	result := proxy.Result[uint32, proxy.WasiHttpTypesError]{
 		Kind: proxy.Ok,
 		Val:  res,
 	}
 
-	proxy.TypesSetResponseOutparam(responseOut, result)
+	proxy.WasiHttpTypesSetResponseOutparam(responseOut, result)
 
-	stream := proxy.TypesOutgoingResponseWrite(res).Unwrap()
-	proxy.StreamsWrite(stream, []byte(goRes.body.Bytes()))
+	stream := proxy.WasiHttpTypesOutgoingResponseWrite(res).Unwrap()
+	proxy.WasiIoStreamsWrite(stream, []byte(goRes.body.Bytes()))
 
-	proxy.TypesDropOutgoingResponse(res)
+	proxy.WasiHttpTypesDropOutgoingResponse(res)
 }
 
 func ListenAndServe(h http.Handler) error {
 	if h == nil {
 		h = http.DefaultServeMux
 	}
-	proxy.SetHttp(&handler{
+	proxy.SetExportsWasiHttpIncomingHandler(&handler{
 		handler: h,
 	})
 	//	for true {
