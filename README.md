@@ -30,9 +30,31 @@ tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
 wasmtime main.wasm --dir .
 ```
 
+## WASM Web serving with WASI-HTTP
+There is an example of web serving via the [WASI-HTTP](https://github.com/WebAssembly/wasi-http) API
+in `webserver/wasi-http`. 
+
+To build:
+```sh
+cd webserver/wasi-http
+tinygo build -o main.wasm -target=wasi main.go
+```
+
+To run it, you will need to install the `wasi-go` runtime as `wasmtime` does
+not support serving (yet).
+
+```sh
+# Only needed once to install the wasirun binary
+go install github.com/stealthrocket/wasi-go@v0.8.0
+
+wasirun --http-server-add localhost:8080 --http v1 main.wasm
+```
+
+Once it is running you can connect to it via http://localhost:8080
+
 ## WASM CGI web serving with lighttpd
-There is a simple example of web serving via WebAssembly + CGI (WAGI) in
-the `webserver` directory. It uses the lighttpd web server and `mod_cgi`.
+There is an example of web serving via WebAssembly + CGI (WAGI) in
+the `webserver/wagi` directory. It uses the lighttpd web server and `mod_cgi`.
 See the `webserver/lighttpd.conf` file for more details.
 
 ```sh
