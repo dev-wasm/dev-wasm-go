@@ -26,7 +26,7 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 
 ## Simple example
 ```sh
-tinygo build -wasm-abi=generic -target=wasi -o main.wasm main.go
+tinygo build -target=wasi -o main.wasm main.go
 wasmtime main.wasm --dir .
 ```
 
@@ -58,7 +58,7 @@ the `webserver/wagi` directory. It uses the lighttpd web server and `mod_cgi`.
 See the `webserver/lighttpd.conf` file for more details.
 
 ```sh
-tinygo build -wasm-abi=generic -target=wasi -o wagi.wasm webserver/wagi.go
+tinygo build -target=wasi -o wagi.wasm webserver/wagi.go
 lighttpd -D -f webserver/lighttpd.conf
 ```
 

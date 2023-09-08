@@ -5,7 +5,7 @@ Use at your own risk, things are likely to change drastically in the future.
 
 ## Building
 ```sh
-tinygo build -wasm-abi=generic -target=wasi -o main.wasm
+tinygo build -target=wasi -o main.wasm -tags purego
 ```
 
 ## Running
@@ -14,16 +14,21 @@ wasmtime --wasi-modules=experimental-wasi-http main.wasm
 ```
 
 ## Regenerating the code 
+
+install `wit-bindgen v0.11.0` from [releases](https://github.com/bytecodealliance/wit-bindgen/releases/tag/wit-bindgen-cli-0.11.0)
+
+```sh
+> wit-bindgen --version
+wit-bindgen-cli 0.11.0 (2ec8e3e25 2023-08-28)
+```
+
 ```sh
 git clone https://github.com/WebAssembly/wasi-http
 cd wasi-http
-git checkout 6c6855a
+git checkout cc86a80
 cd ../
 wit-bindgen tiny-go wasi-http/wit -w proxy --out-dir proxy
 ```
-
-Note that there is currently a bug in `wit-bindgen` which prevents this from working
-correctly, it needs a small edit to add a `typedef`.
 
 TODO: extract this out into a general purpose library
 
