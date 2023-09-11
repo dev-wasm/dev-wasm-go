@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dev-wasm/dev-wasm-go/http/server"
+	"github.com/dev-wasm/dev-wasm-go/http/server/handler"
 )
 
 var count = 0
@@ -18,5 +18,5 @@ func main() {
 		count = count + 1
 		w.Write([]byte(body))
 	})
-	server.ListenAndServe(nil)
+	handler.ListenAndServe(nil)
 }

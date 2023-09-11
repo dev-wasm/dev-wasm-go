@@ -14,7 +14,7 @@
         "ghcr.io/devcontainers/features/common-utils": {}
     },
     "remoteEnv": {
-        "PATH": "${containerEnv:PATH}:/usr/local/lib/wasi-sdk-20.0/bin:/usr/local/lib",
+        "PATH": "${containerEnv:PATH}:/usr/local/lib/wasi-sdk-20.0/bin:/usr/local/lib:/usr/local/go/bin",
         "GOROOT": "/usr/local/go"
     }
 }
