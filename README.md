@@ -45,9 +45,9 @@ not support serving (yet).
 
 ```sh
 # Only needed once to install the wasirun binary
-go install github.com/stealthrocket/wasi-go@v0.8.0
+go install github.com/stealthrocket/wasi-go/cmd/wasirun@v0.8.0
 
-wasirun --http-server-add localhost:8080 --http v1 main.wasm
+wasirun --http-server-addr localhost:8080 --http v1 main.wasm
 ```
 
 Once it is running you can connect to it via http://localhost:8080
