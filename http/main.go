@@ -20,6 +20,13 @@ func printResponse(r *http.Response) {
 	fmt.Printf("Body: \n%s\n", body)
 }
 
+//foo export wasi:cli/run@0.2.0-rc-2023-11-10#run
+
+//export exports_wasi_cli_0_2_0_rc_2023_11_10_run_run
+func run() {
+	main()
+}
+
 func main() {
 	client := http.Client{
 		Transport: wasiclient.WasiRoundTripper{},

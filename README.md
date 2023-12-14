@@ -36,18 +36,18 @@ in `webserver/wasi-http`.
 
 To build:
 ```sh
+# Install the wit interface files, this only needs to be done once.
+cd http/proxy
+make wasi-http
+
+# Return to root
+cd ../../
+
+# Build the wasm component
 cd webserver/wasi-http
-tinygo build -o main.wasm -target=wasi main.go
-```
-
-To run it, you will need to install the `wasi-go` runtime as `wasmtime` does
-not support serving (yet).
-
-```sh
-# Only needed once to install the wasirun binary
-go install github.com/stealthrocket/wasi-go/cmd/wasirun@v0.8.0
-
-wasirun --http-server-addr localhost:8080 --http v1 main.wasm
+make clean
+make main_2023_11_10.component.wasm
+wasmtime serve main_2023_11_10.component.wasm
 ```
 
 Once it is running you can connect to it via http://localhost:8080

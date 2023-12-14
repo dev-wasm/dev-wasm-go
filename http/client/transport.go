@@ -25,35 +25,35 @@ func BodyReaderCloser(b []byte) io.ReadCloser {
 	return bytesReaderCloser{bytes.NewReader(b)}
 }
 
-func schemeFromString(s string) proxy.WasiHttpTypesScheme {
+func schemeFromString(s string) proxy.WasiHttp0_2_0_rc_2023_11_10_TypesScheme {
 	switch s {
 	case "http":
-		return proxy.WasiHttpTypesSchemeHttp()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesSchemeHttps()
 	case "https":
-		return proxy.WasiHttpTypesSchemeHttps()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesSchemeHttps()
 	default:
 		panic(fmt.Sprintf("Unknown scheme: %s", s))
 	}
 }
 
-func methodFromString(m string) proxy.WasiHttpTypesMethod {
+func methodFromString(m string) proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethod {
 	switch m {
 	case "GET":
-		return proxy.WasiHttpTypesMethodGet()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodGet()
 	case "PUT":
-		return proxy.WasiHttpTypesMethodPut()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPut()
 	case "POST":
-		return proxy.WasiHttpTypesMethodPost()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPost()
 	case "DELETE":
-		return proxy.WasiHttpTypesMethodDelete()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodDelete()
 	case "OPTIONS":
-		return proxy.WasiHttpTypesMethodOptions()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodOptions()
 	case "PATCH":
-		return proxy.WasiHttpTypesMethodPatch()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPatch()
 	case "CONNECT":
-		return proxy.WasiHttpTypesMethodConnect()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodConnect()
 	case "TRACE":
-		return proxy.WasiHttpTypesMethodTrace()
+		return proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodTrace()
 	default:
 		panic(fmt.Sprintf("Unsupported method: %s", m))
 	}
@@ -83,62 +83,67 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	if _, ok := r.Header["User-agent"]; !ok {
 		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.1"}
 	}
-	strstr := []proxy.WasiHttpTypesTuple2StringListU8TT{}
+	strstr := []proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{}
 	for k, v := range r.Header {
 		// TODO: handle multi-headers here.
-		strstr = append(strstr, proxy.WasiHttpTypesTuple2StringListU8TT{k, []uint8(v[0])})
+		strstr = append(strstr, proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{k, []uint8(v[0])})
 	}
-	headers := proxy.WasiHttpTypesNewFields(strstr)
+	headers := proxy.StaticFieldsFromList(strstr).Unwrap()
 
 	method := methodFromString(r.Method)
 	scheme := proxy.Some(schemeFromString(r.URL.Scheme))
 
-	path_with_querty := proxy.Some(r.URL.RequestURI())
+	path_with_query := proxy.Some(r.URL.RequestURI())
 	authority := proxy.Some(r.URL.Host)
 
-	req := proxy.WasiHttpTypesNewOutgoingRequest(method, path_with_querty, scheme, authority, headers)
+	req := proxy.NewOutgoingRequest(headers)
+	req.SetMethod(method)
+	req.SetPathWithQuery(path_with_query)
+	req.SetScheme(scheme)
+	req.SetAuthority(authority)
 
 	if r.Body != nil {
-		s := proxy.WasiHttpTypesOutgoingRequestWrite(req).Unwrap()
+		s := req.Body().Unwrap().Write().Unwrap()
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
-		proxy.WasiIoStreamsWrite(s, b).Unwrap()
+		s.BlockingWriteAndFlush(b).Unwrap()
 	}
 
-	var opts proxy.Option[proxy.WasiHttpTypesRequestOptions]
-	opts = proxy.None[proxy.WasiHttpTypesRequestOptions]()
-	res := proxy.WasiHttpOutgoingHandlerHandle(req, opts)
+	var opts proxy.Option[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]
+	opts = proxy.None[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]()
+	res := proxy.WasiHttp0_2_0_rc_2023_11_10_OutgoingHandlerHandle(req, opts).Unwrap()
 
-	resultOption := proxy.WasiHttpTypesFutureIncomingResponseGet(res)
+	resultOption := res.Get()
 	if !resultOption.IsSome() {
 		log.Fatalf("No result!")
 	}
-	result := resultOption.Unwrap().Unwrap()
+	result := resultOption.Unwrap().Unwrap().Unwrap()
 
 	response := http.Response{
-		StatusCode: int(proxy.WasiHttpTypesIncomingResponseStatus(result)),
+		StatusCode: int(result.Status()),
 		Header:     http.Header{},
 	}
 
-	responseHeaders := proxy.WasiHttpTypesIncomingResponseHeaders(result)
-	entries := proxy.WasiHttpTypesFieldsEntries(responseHeaders)
+	responseHeaders := result.Headers()
+	entries := responseHeaders.Entries()
 
 	for _, entry := range entries {
 		// TODO: handle multiple headers here.
 		response.Header[entry.F0] = []string{string(entry.F1)}
 	}
 
-	stream := proxy.WasiHttpTypesIncomingResponseConsume(result).Unwrap()
+	body := result.Consume().Unwrap()
+	stream := body.Stream().Unwrap()
 
-	data := proxy.WasiIoStreamsRead(stream, 64*1024).Unwrap()
+	data := stream.Read(64*1024).Unwrap()
 
-	response.Body = bytesReaderCloser{bytes.NewReader(data.F0)}
+	response.Body = bytesReaderCloser{bytes.NewReader(data)}
 
-	proxy.WasiHttpTypesDropOutgoingRequest(req)
-	proxy.WasiIoStreamsDropInputStream(stream)
-	proxy.WasiHttpTypesDropIncomingResponse(result)
+	proxy.StaticOutgoingRequestDrop(req)
+	proxy.StaticIncomingStreamDrop(stream)
+	proxy.StaticIncomingResponseDrop(result)
 
 	return &response, nil
 }

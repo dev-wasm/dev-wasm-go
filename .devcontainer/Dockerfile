@@ -21,4 +21,5 @@ RUN archi=$(echo $TARGETPLATFORM | cut -d / -f2) && \
 RUN curl --output wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz -L https://github.com/bytecodealliance/wasm-tools/releases/download/wasm-tools-${WASM_TOOLS_VERSION}/wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz
 RUN tar xzf wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz
 RUN mv wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux/wasm-tools /usr/local/bin/wasm-tools
+RUN apt install -y -q make
 

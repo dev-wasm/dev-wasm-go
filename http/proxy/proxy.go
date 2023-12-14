@@ -3335,13 +3335,6 @@ func (self WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingBody) Write() Result[WasiHtt
   return lift_ret
 }
 
-func StaticOutgoingStreamDrop(handle WasiIo0_2_0_rc_2023_11_10_StreamsOutputStream) {
-  var lower_self C.wasi_io_0_2_0_rc_2023_11_10_streams_own_output_stream_t
-  lower_self.__handle = C.int32_t(handle)
-
-  C.wasi_io_0_2_0_rc_2023_11_10_streams_output_stream_drop_own(lower_self)
-}
-
 func StaticOutgoingBodyFinish(this WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingBody, trailers Option[WasiHttp0_2_0_rc_2023_11_10_TypesTrailers]) Result[struct{}, WasiHttp0_2_0_rc_2023_11_10_TypesErrorCode] {
   var lower_this C.wasi_http_0_2_0_rc_2023_11_10_types_own_outgoing_body_t
   lower_this.__handle = C.int32_t(this)
