@@ -1,8 +1,8 @@
 .phony: gen clean run
 
-default: main.wasm
+default: wasi-http
 
-wasi-http: ; git clone https://github.com/WebAssembly/wasi-http; cd wasi-http; git checkout 53e2d25
+wasi-http: ; git clone https://github.com/WebAssembly/wasi-http; cd wasi-http; git checkout v0.2.0-rc-2023-11-10
 
 # Note that this doesn't quite work right there's a bug in wit-bindgen 0.4.0 that missing a C definition
 # it is fixed in later versions, but they don't understand this wit syntax *bleeding-edge*

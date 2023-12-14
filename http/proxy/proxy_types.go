@@ -62,47 +62,69 @@ func None[T any]() Option[T] {
 type ResultKind int
 
 const (
-Ok ResultKind = iota
-Err
+resultOk ResultKind = iota
+resultErr
 )
 
 type Result[T any, E any] struct {
-  Kind ResultKind
-  Val  T
-  Err  E
+  kind ResultKind
+  resultOk   T
+  resultErr  E
 }
 
+// IsOk returns true if the result is Ok.
 func (r Result[T, E]) IsOk() bool {
-  return r.Kind == Ok
+  return r.kind == resultOk
 }
 
+// IsErr returns true if the result is Err.
 func (r Result[T, E]) IsErr() bool {
-  return r.Kind == Err
+  return r.kind == resultErr
 }
 
+// Unwrap returns the value if the result is Ok.
 func (r Result[T, E]) Unwrap() T {
-  if r.Kind != Ok {
+  if r.kind != resultOk {
     panic("Result is Err")
   }
-  return r.Val
+  return r.resultOk
 }
 
+// UnwrapErr returns the value if the result is Err.
 func (r Result[T, E]) UnwrapErr() E {
-  if r.Kind != Err {
+  if r.kind != resultErr {
     panic("Result is Ok")
   }
-  return r.Err
+  return r.resultErr
 }
 
+// Set sets the value and returns it.
 func (r *Result[T, E]) Set(val T) T {
-  r.Kind = Ok
-  r.Val = val
+  r.kind = resultOk
+  r.resultOk = val
   return val
 }
 
-func (r *Result[T, E]) SetErr(err E) E {
-  r.Kind = Err
-  r.Err = err
-  return err
+// SetErr sets the value and returns it.
+func (r *Result[T, E]) SetErr(val E) E {
+  r.kind = resultErr
+  r.resultErr = val
+  return val
+}
+
+// Ok is a constructor for Result[T, E] which represents Ok.
+func Ok[T any, E any](v T) Result[T, E] {
+  return Result[T, E]{
+    kind: resultOk,
+    resultOk:   v,
+  }
+}
+
+// Err is a constructor for Result[T, E] which represents Err.
+func Err[T any, E any](v E) Result[T, E] {
+  return Result[T, E]{
+    kind: resultErr,
+    resultErr:  v,
+  }
 }
 
