@@ -7,6 +7,14 @@ import (
 	"github.com/dev-wasm/dev-wasm-go/http/proxy"
 )
 
+var h = &handler{
+	handler : http.DefaultServeMux,
+}
+
+func init() {
+	proxy.SetExportsWasiHttp0_2_0_rc_2023_11_10_IncomingHandler(h)
+}
+
 type handler struct {
 	handler http.Handler
 }
@@ -29,28 +37,57 @@ func (w *wasmResponseWriter) Write(data []byte) (int, error) {
 	return w.body.Write(data)
 }
 
-func methodToString(method proxy.WasiHttpTypesMethod) string {
+func methodToString(method proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethod) string {
 	switch method.Kind() {
-	case proxy.WasiHttpTypesMethodKindGet:
+	case proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindGet:
 		return "GET"
-	case proxy.WasiHttpTypesMethodKindPut:
+	case proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindPut:
 		return "PUT"
-	case proxy.WasiHttpTypesMethodKindPost:
+	case proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindPost:
 		return "POST"
-	case proxy.WasiHttpTypesMethodKindDelete:
+	case proxy.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindDelete:
 		return "DELETE"
 	default:
 		panic("unsupported method")
 	}
 }
 
-func (h *handler) Handle(req uint32, responseOut uint32) {
-	path := proxy.WasiHttpTypesIncomingRequestPathWithQuery(req).Unwrap()
-	method := proxy.WasiHttpTypesIncomingRequestMethod(req)
+func (h* handler) HandleError(msg string, req proxy.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingRequest, responseOut proxy.WasiHttp0_2_0_rc_2023_11_10_TypesResponseOutparam) {
+	hdrs := proxy.NewFields()
+	response := proxy.NewOutgoingResponse(hdrs)
+	response.SetStatusCode(500)
+	body := response.Body().Unwrap()
+	resResult := proxy.Ok[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingResponse, proxy.WasiHttp0_2_0_rc_2023_11_10_TypesErrorCode](response)
+	proxy.StaticResponseOutparamSet(responseOut, resResult)
+
+	out := body.Write().Unwrap()
+	out.BlockingWriteAndFlush([]uint8(msg)).Unwrap()
+	proxy.StaticOutgoingBodyFinish(body, proxy.None[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTrailers]())
+}
+
+func (h *handler) Handle(req proxy.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingRequest, responseOut proxy.WasiHttp0_2_0_rc_2023_11_10_TypesResponseOutparam) {
+	defer func() {
+        if r := recover(); r != nil {
+			msg := "unknown panic"
+			switch t := r.(type) {
+			case string:
+				msg = t
+			case error:
+				msg = t.Error()
+			default:
+				// pass
+			}
+			h.HandleError(msg, req, responseOut)
+        }
+	}()
+	
+	path := req.PathWithQuery().Unwrap()
+	method := req.Method()
 
 	goReq, err := http.NewRequest(methodToString(method), path, &bytes.Buffer{})
 	if err != nil {
-		panic(err.Error())
+		h.HandleError(err.Error(), req, responseOut)
+		return
 	}
 	goRes := wasmResponseWriter{
 		header: http.Header{},
@@ -59,42 +96,35 @@ func (h *handler) Handle(req uint32, responseOut uint32) {
 	}
 	h.handler.ServeHTTP(&goRes, goReq)
 
-	headers := []proxy.WasiHttpTypesTuple2StringListU8TT{}
+	headers := []proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{}
 	for key, val := range goRes.header {
 		for ix := range val {
-			headers = append(headers, proxy.WasiHttpTypesTuple2StringListU8TT{
+			headers = append(headers, proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{
 				F0: key,
 				F1: []uint8(val[ix]),
 			})
 		}
 	}
+	f := proxy.StaticFieldsFromList(headers).Unwrap()
 
-	f := proxy.WasiHttpTypesNewFields(headers)
+	res := proxy.NewOutgoingResponse(f)
+	res.SetStatusCode(uint16(goRes.code))
+	body := res.Body().Unwrap()
 
-	res := proxy.WasiHttpTypesNewOutgoingResponse(uint16(goRes.code), f)
+	result := proxy.Ok[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingResponse, proxy.WasiHttp0_2_0_rc_2023_11_10_TypesErrorCode](res)
 
-	result := proxy.Result[uint32, proxy.WasiHttpTypesError]{
-		Kind: proxy.Ok,
-		Val:  res,
-	}
+	proxy.StaticResponseOutparamSet(responseOut, result)
 
-	proxy.WasiHttpTypesSetResponseOutparam(responseOut, result)
-
-	stream := proxy.WasiHttpTypesOutgoingResponseWrite(res).Unwrap()
-	proxy.WasiIoStreamsWrite(stream, []byte(goRes.body.Bytes()))
-
-	proxy.WasiHttpTypesDropOutgoingResponse(res)
+	stream := body.Write().Unwrap()
+	stream.BlockingWriteAndFlush([]byte(goRes.body.Bytes()))
+	proxy.StaticOutgoingStreamDrop(stream)
+	
+	proxy.StaticOutgoingBodyFinish(body, proxy.None[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesTrailers]())
 }
 
-func ListenAndServe(h http.Handler) error {
-	if h == nil {
-		h = http.DefaultServeMux
+func ListenAndServe(handler http.Handler) error {
+	if handler != nil {
+		h.handler = handler
 	}
-	proxy.SetExportsWasiHttpIncomingHandler(&handler{
-		handler: h,
-	})
-	//	for true {
-	//		time.Sleep(time.Second * 60)
-	//	}
 	return nil
 }
