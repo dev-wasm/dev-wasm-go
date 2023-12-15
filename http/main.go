@@ -43,7 +43,6 @@ func main() {
 	defer res.Body.Close()
 	printResponse(res)
 
-	/*
 	res, err = client.Post("https://postman-echo.com/post", "application/json", wasiclient.BodyReaderCloser([]byte("{\"foo\": \"bar\"}")))
 	if err != nil {
 		panic(err.Error())
@@ -57,5 +56,4 @@ func main() {
 	}
 	defer res.Body.Close()
 	printResponse(res)
-	*/
 }

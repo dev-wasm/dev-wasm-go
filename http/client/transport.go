@@ -109,6 +109,7 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 		s.BlockingWriteAndFlush(b).Unwrap()
+		proxy.StaticOutgoingStreamDrop(s)
 	}
 
 	var opts proxy.Option[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]
