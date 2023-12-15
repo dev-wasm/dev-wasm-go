@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	wasiclient "github.com/dev-wasm/dev-wasm-go/http/client"
+	"github.com/dev-wasm/dev-wasm-go/http/proxy"
 )
 
 func printResponse(r *http.Response) {
@@ -20,11 +21,15 @@ func printResponse(r *http.Response) {
 	fmt.Printf("Body: \n%s\n", body)
 }
 
-//foo export wasi:cli/run@0.2.0-rc-2023-11-10#run
+type runner struct{}
 
-//export exports_wasi_cli_0_2_0_rc_2023_11_10_run_run
-func run() {
+func(r runner) Run() proxy.Result[struct{}, struct{}] {
 	main()
+	return proxy.Ok[struct{}, struct{}](r)
+}
+
+func init() {
+	proxy.SetExportsWasiCli0_2_0_rc_2023_11_10_Run(runner{})
 }
 
 func main() {
@@ -38,6 +43,7 @@ func main() {
 	defer res.Body.Close()
 	printResponse(res)
 
+	/*
 	res, err = client.Post("https://postman-echo.com/post", "application/json", wasiclient.BodyReaderCloser([]byte("{\"foo\": \"bar\"}")))
 	if err != nil {
 		panic(err.Error())
@@ -51,4 +57,5 @@ func main() {
 	}
 	defer res.Body.Close()
 	printResponse(res)
+	*/
 }

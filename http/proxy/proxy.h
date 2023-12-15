@@ -568,6 +568,10 @@ typedef wasi_http_0_2_0_rc_2023_11_10_types_own_incoming_request_t exports_wasi_
 
 typedef wasi_http_0_2_0_rc_2023_11_10_types_own_response_outparam_t exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_own_response_outparam_t;
 
+typedef struct {
+  bool is_err;
+} exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_t;
+
 // Imported Functions from `wasi:clocks/wall-clock@0.2.0-rc-2023-11-10`
 // Read the current value of the clock.
 // 
@@ -1136,6 +1140,9 @@ extern void wasi_io_0_2_0_rc_2023_11_10_streams_method_output_stream_write(wasi_
     // Exported Functions from `wasi:http/incoming-handler@0.2.0-rc-2023-11-10`
     void exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_handle(exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_own_incoming_request_t request, exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_own_response_outparam_t response_out);
     
+    // Exported Functions from `wasi:cli/run@0.2.0-rc-2023-11-10`
+    void exports_wasi_cli_0_2_0_rc_2023_11_10_run_run(exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_t *ret);
+    
     // Helper Functions
     
     extern void wasi_io_0_2_0_rc_2023_11_10_poll_pollable_drop_own(wasi_io_0_2_0_rc_2023_11_10_poll_own_pollable_t handle);
@@ -1306,6 +1313,8 @@ extern void wasi_io_0_2_0_rc_2023_11_10_streams_method_output_stream_write(wasi_
     void wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_option_own_request_options_free(wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_option_own_request_options_t *ptr);
     
     void wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_result_own_future_incoming_response_error_code_free(wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_result_own_future_incoming_response_error_code_t *ptr);
+    
+    void exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_free(exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_t *ptr);
     
     // Transfers ownership of `s` into the string `ret`
     void proxy_string_set(proxy_string_t *ret, char*s);

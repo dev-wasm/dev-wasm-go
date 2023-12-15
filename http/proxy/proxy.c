@@ -837,6 +837,11 @@ void wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_result_own_future_incoming_r
   }
 }
 
+void exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_free(exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_t *ptr) {
+  if (!ptr->is_err) {
+  }
+}
+
 void proxy_string_set(proxy_string_t *ret, char*s) {
   ret->ptr = (uint8_t*) s;
   ret->len = strlen(s);
@@ -5297,6 +5302,19 @@ void wasi_http_0_2_0_rc_2023_11_10_outgoing_handler_handle(wasi_http_0_2_0_rc_20
 __attribute__((__export_name__("wasi:http/incoming-handler@0.2.0-rc-2023-11-10#handle")))
 void __wasm_export_exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_handle(int32_t arg, int32_t arg0) {
   exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_handle((exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_own_incoming_request_t) { arg }, (exports_wasi_http_0_2_0_rc_2023_11_10_incoming_handler_own_response_outparam_t) { arg0 });
+}
+
+__attribute__((__export_name__("wasi:cli/run@0.2.0-rc-2023-11-10#run")))
+int32_t __wasm_export_exports_wasi_cli_0_2_0_rc_2023_11_10_run_run(void) {
+  exports_wasi_cli_0_2_0_rc_2023_11_10_run_result_void_void_t ret;
+  exports_wasi_cli_0_2_0_rc_2023_11_10_run_run(&ret);
+  int32_t result;
+  if ((ret).is_err) {
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 extern void __component_type_object_force_link_proxy(void);

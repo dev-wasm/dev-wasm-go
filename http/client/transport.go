@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -102,8 +101,9 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	req.SetScheme(scheme)
 	req.SetAuthority(authority)
 
+	body := req.Body().Unwrap()
 	if r.Body != nil {
-		s := req.Body().Unwrap().Write().Unwrap()
+		s := body.Write().Unwrap()
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
@@ -115,11 +115,19 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	opts = proxy.None[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]()
 	res := proxy.WasiHttp0_2_0_rc_2023_11_10_OutgoingHandlerHandle(req, opts).Unwrap()
 
+	proxy.StaticOutgoingBodyFinish(body, proxy.None[proxy.WasiHttp0_2_0_rc_2023_11_10_TypesFields]())
+
 	resultOption := res.Get()
-	if !resultOption.IsSome() {
-		log.Fatalf("No result!")
+	if resultOption.IsSome() {
+		return nil, fmt.Errorf("result already taken!")
 	}
+	poll := res.Subscribe()
+	poll.Block()
+	resultOption = res.Get()
 	result := resultOption.Unwrap().Unwrap().Unwrap()
+
+	proxy.StaticPollableDrop(poll)
+	proxy.StaticFutureIncomingResponseDrop(res)
 
 	response := http.Response{
 		StatusCode: int(result.Status()),
@@ -133,17 +141,32 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		// TODO: handle multiple headers here.
 		response.Header[entry.F0] = []string{string(entry.F1)}
 	}
+	proxy.StaticFieldsDrop(responseHeaders)
 
-	body := result.Consume().Unwrap()
-	stream := body.Stream().Unwrap()
+	responseBody := result.Consume().Unwrap()
+	stream := responseBody.Stream().Unwrap()
+	inputPoll := stream.Subscribe()
 
-	data := stream.Read(64*1024).Unwrap()
+	data := []uint8{}
+	for {
+		inputPoll.Block()
+		dataResult := stream.Read(64*1024)
+		if dataResult.IsOk() {
+			data = append(data, dataResult.Unwrap()...)
+		} else if dataResult.UnwrapErr().Kind() == proxy.WasiIo0_2_0_rc_2023_11_10_StreamsStreamErrorKindClosed {
+			break
+		} else {
+			return nil, fmt.Errorf("Error reading response stream")
+		}
+	}
 
 	response.Body = bytesReaderCloser{bytes.NewReader(data)}
 
-	proxy.StaticOutgoingRequestDrop(req)
-	proxy.StaticIncomingStreamDrop(stream)
 	proxy.StaticIncomingResponseDrop(result)
+	//proxy.StaticOutgoingRequestDrop(req)
+	//
+	//proxy.StaticIncomingStreamDrop(stream)
+	//
 
 	return &response, nil
 }
