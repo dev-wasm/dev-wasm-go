@@ -4,7 +4,6 @@
         "dockerfile": "Dockerfile",
         "context": ".."
     },
-
     "features": {
         "devwasm.azurecr.io/dev-wasm/dev-wasm-feature/wasmtime-wasi:0.0.9": {
             "version": "20",
@@ -16,5 +15,10 @@
     "remoteEnv": {
         "PATH": "${containerEnv:PATH}:/usr/local/lib/wasi-sdk-20.0/bin:/usr/local/lib:/usr/local/go/bin",
         "GOROOT": "/usr/local/go"
+    },
+    "customizations": {
+        "vscode": {
+	        "extensions": [ "ms-vscode.cpptools-extension-pack", "golang.go" ]
+	    }
     }
 }
