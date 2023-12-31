@@ -1,6 +1,6 @@
-package proxy
+package wasi
 
-// #include "proxy.h"
+// #include "wasi.h"
 import "C"
 
 // Temporarily add some drop methods that aren't being generated.

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	wasiclient "github.com/dev-wasm/dev-wasm-go/http/client"
-	"github.com/dev-wasm/dev-wasm-go/http/proxy"
+	"github.com/dev-wasm/dev-wasm-go/wasi"
 )
 
 func printResponse(r *http.Response) {
@@ -23,13 +23,13 @@ func printResponse(r *http.Response) {
 
 type runner struct{}
 
-func(r runner) Run() proxy.Result[struct{}, struct{}] {
+func(r runner) Run() wasi.Result[struct{}, struct{}] {
 	main()
-	return proxy.Ok[struct{}, struct{}](r)
+	return wasi.Ok[struct{}, struct{}](r)
 }
 
 func init() {
-	proxy.SetExportsWasiCli0_2_0_rc_2023_11_10_Run(runner{})
+	wasi.SetExportsWasiCli0_2_0_rc_2023_11_10_Run(runner{})
 }
 
 func main() {
