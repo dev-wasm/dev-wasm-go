@@ -1,4 +1,4 @@
-package proxy
+package wasi
 
 // inspired from https://github.com/moznion/go-optional
 
