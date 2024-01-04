@@ -27,8 +27,10 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 ## Simple example
 ```sh
 tinygo build -target=wasi -o main.wasm main.go
-wasmtime main.wasm --dir .
+wasmtime --dir . main.wasm
 ```
+
+
 
 ## WASM Web serving with WASI-HTTP
 There is an example of web serving via the [WASI-HTTP](https://github.com/WebAssembly/wasi-http) API
@@ -37,17 +39,16 @@ in `webserver/wasi-http`.
 To build:
 ```sh
 # Install the wit interface files, this only needs to be done once.
-cd http/proxy
+cd wasi
 make wasi-http
 
 # Return to root
-cd ../../
+cd ../
 
 # Build the wasm component
 cd webserver/wasi-http
 make clean
-make main_2023_11_10.component.wasm
-wasmtime serve main_2023_11_10.component.wasm
+make run
 ```
 
 Once it is running you can connect to it via http://localhost:8080
