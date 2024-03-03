@@ -57,7 +57,8 @@ func methodToString(method wasi.WasiHttp0_2_0_TypesMethod) string {
 }
 
 func (h *handler) HandleError(msg string, req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_TypesResponseOutparam) {
-	hdrs := wasi.NewFields()
+	headers := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
+	hdrs := wasi.StaticFieldsFromList(headers).Unwrap()
 	response := wasi.NewOutgoingResponse(hdrs)
 	response.SetStatusCode(500)
 	body := response.Body().Unwrap()
