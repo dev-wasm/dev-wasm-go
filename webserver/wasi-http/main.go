@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dev-wasm/dev-wasm-go/http/server/handler"
+	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 )
 
 var count = 0

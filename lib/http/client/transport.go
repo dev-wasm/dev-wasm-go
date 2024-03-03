@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dev-wasm/dev-wasm-go/wasi"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
 )
 
 type bytesReaderCloser struct {
@@ -151,7 +151,7 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	data := []uint8{}
 	for {
 		inputPoll.Block()
-		dataResult := stream.Read(64*1024)
+		dataResult := stream.Read(64 * 1024)
 		if dataResult.IsOk() {
 			data = append(data, dataResult.Unwrap()...)
 		} else if dataResult.UnwrapErr().Kind() == wasi.WasiIo0_2_0_rc_2023_11_10_StreamsStreamErrorKindClosed {

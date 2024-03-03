@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/dev-wasm/dev-wasm-go/wasi"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
 )
 
 var h = &handler{

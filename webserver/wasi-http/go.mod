@@ -1,11 +1,7 @@
 module github.com/dev-wasm/dev-wasm-go/webserver/wasi-http
 
-go 1.21.1
+go 1.22.0
 
-require github.com/dev-wasm/dev-wasm-go/wasi v0.0.0 // indirect
+require github.com/dev-wasm/dev-wasm-go/lib v0.0.0
 
-replace github.com/dev-wasm/dev-wasm-go/wasi v0.0.0 => ../../wasi
-
-require github.com/dev-wasm/dev-wasm-go/http v0.0.0-20230731220621-d65072e621f8
-
-replace github.com/dev-wasm/dev-wasm-go/http v0.0.0-20230731220621-d65072e621f8 => ../../http
+replace github.com/dev-wasm/dev-wasm-go/lib v0.0.0 => ../../lib
