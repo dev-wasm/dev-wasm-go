@@ -5,10 +5,10 @@
         "context": ".."
     },
     "features": {
-        "devwasm.azurecr.io/dev-wasm/dev-wasm-feature/wasmtime-wasi:0.0.9": {
-            "version": "20",
-            "wasmtime_version": "v15.0.1",
-            "wit_version": "0.16.0"
+        "devwasm.azurecr.io/dev-wasm/dev-wasm-feature/wasmtime-wasi:0.0.15": {
+            "version": "21",
+            "wasmtime_version": "v18.0.2",
+            "wit_version": "0.19.2"
         },
         "ghcr.io/devcontainers/features/common-utils": {}
     },

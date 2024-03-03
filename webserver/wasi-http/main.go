@@ -9,13 +9,18 @@ import (
 
 var count = 0
 
+type myHandler struct{}
+
+func (h myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	count++
+	w.WriteHeader(200)
+	w.Write([]byte(fmt.Sprintf("Hello from WASM! (%d) %s", count, r.URL.Path)))
+}
+
 func init() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		count++
-		w.WriteHeader(200)
-		w.Write([]byte(fmt.Sprintf("Hello from WASM! (%d)", count)))
-	})
-	handler.ListenAndServe(nil)
+	// For some reason
+	// http.Handle and http.HandleFunc aren't working :(
+	handler.ListenAndServe(myHandler{})
 }
 
 func main() {}

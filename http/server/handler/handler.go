@@ -8,11 +8,15 @@ import (
 )
 
 var h = &handler{
-	handler : http.DefaultServeMux,
+	handler: http.DefaultServeMux,
 }
 
 func init() {
-	wasi.SetExportsWasiHttp0_2_0_rc_2023_11_10_IncomingHandler(h)
+	wasi.SetExportsWasiHttp0_2_0_IncomingHandler(h)
+}
+
+func HandleFunc(pattern string, fn http.HandlerFunc) {
+	http.DefaultServeMux.HandleFunc(pattern, fn)
 }
 
 type handler struct {
@@ -37,37 +41,37 @@ func (w *wasmResponseWriter) Write(data []byte) (int, error) {
 	return w.body.Write(data)
 }
 
-func methodToString(method wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethod) string {
+func methodToString(method wasi.WasiHttp0_2_0_TypesMethod) string {
 	switch method.Kind() {
-	case wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindGet:
+	case wasi.WasiHttp0_2_0_TypesMethodKindGet:
 		return "GET"
-	case wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindPut:
+	case wasi.WasiHttp0_2_0_TypesMethodKindPut:
 		return "PUT"
-	case wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindPost:
+	case wasi.WasiHttp0_2_0_TypesMethodKindPost:
 		return "POST"
-	case wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodKindDelete:
+	case wasi.WasiHttp0_2_0_TypesMethodKindDelete:
 		return "DELETE"
 	default:
 		panic("unsupported method")
 	}
 }
 
-func (h* handler) HandleError(msg string, req wasi.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_rc_2023_11_10_TypesResponseOutparam) {
+func (h *handler) HandleError(msg string, req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_TypesResponseOutparam) {
 	hdrs := wasi.NewFields()
 	response := wasi.NewOutgoingResponse(hdrs)
 	response.SetStatusCode(500)
 	body := response.Body().Unwrap()
-	resResult := wasi.Ok[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingResponse, wasi.WasiHttp0_2_0_rc_2023_11_10_TypesErrorCode](response)
+	resResult := wasi.Ok[wasi.WasiHttp0_2_0_TypesOutgoingResponse, wasi.WasiHttp0_2_0_TypesErrorCode](response)
 	wasi.StaticResponseOutparamSet(responseOut, resResult)
 
 	out := body.Write().Unwrap()
 	out.BlockingWriteAndFlush([]uint8(msg)).Unwrap()
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTrailers]())
+	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesTrailers]())
 }
 
-func (h *handler) Handle(req wasi.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_rc_2023_11_10_TypesResponseOutparam) {
+func (h *handler) Handle(req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_TypesResponseOutparam) {
 	defer func() {
-        if r := recover(); r != nil {
+		if r := recover(); r != nil {
 			msg := "unknown panic"
 			switch t := r.(type) {
 			case string:
@@ -78,9 +82,9 @@ func (h *handler) Handle(req wasi.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingReque
 				// pass
 			}
 			h.HandleError(msg, req, responseOut)
-        }
+		}
 	}()
-	
+
 	path := req.PathWithQuery().Unwrap()
 	method := req.Method()
 
@@ -96,10 +100,10 @@ func (h *handler) Handle(req wasi.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingReque
 	}
 	h.handler.ServeHTTP(&goRes, goReq)
 
-	headers := []wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{}
+	headers := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
 	for key, val := range goRes.header {
 		for ix := range val {
-			headers = append(headers, wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{
+			headers = append(headers, wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{
 				F0: key,
 				F1: []uint8(val[ix]),
 			})
@@ -111,15 +115,15 @@ func (h *handler) Handle(req wasi.WasiHttp0_2_0_rc_2023_11_10_TypesIncomingReque
 	res.SetStatusCode(uint16(goRes.code))
 	body := res.Body().Unwrap()
 
-	result := wasi.Ok[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesOutgoingResponse, wasi.WasiHttp0_2_0_rc_2023_11_10_TypesErrorCode](res)
+	result := wasi.Ok[wasi.WasiHttp0_2_0_TypesOutgoingResponse, wasi.WasiHttp0_2_0_TypesErrorCode](res)
 
 	wasi.StaticResponseOutparamSet(responseOut, result)
 
 	stream := body.Write().Unwrap()
 	stream.BlockingWriteAndFlush([]byte(goRes.body.Bytes()))
-	wasi.StaticOutgoingStreamDrop(stream)
-	
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTrailers]())
+	stream.Drop()
+
+	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesTrailers]())
 }
 
 func ListenAndServe(handler http.Handler) error {
