@@ -39,15 +39,16 @@ in `webserver/wasi-http`.
 To build:
 ```sh
 # Install the wit interface files, this only needs to be done once.
-cd wasi
+cd lib/wasi
 make wasi-http
 
 # Return to root
-cd ../
+cd ../../
 
 # Build the wasm component
 cd webserver/wasi-http
 make clean
+make default
 make run
 ```
 
@@ -68,3 +69,4 @@ Once the server is running, VS Code or Codespaces should prompt you to connect t
 ## HTTP Client Example
 There is a more complicated example in the [`http` directory](./http/) which shows an example 
 of making an HTTP client call using the experimental wasi-http support in `wasmtime`.
+
