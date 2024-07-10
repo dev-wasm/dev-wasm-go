@@ -4,9 +4,9 @@ FROM --platform=$BUILDPLATFORM ubuntu:jammy
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
-ENV TINY_GO_VERSION=0.31.1
-ENV GOLANG_VERSION=1.22.0
-ENV WASM_TOOLS_VERSION=1.0.60
+ENV TINY_GO_VERSION=0.32.0
+ENV GOLANG_VERSION=1.22.5
+ENV WASM_TOOLS_VERSION=1.212.0
 
 RUN apt-get update && apt-get install -yy -q curl
 
@@ -18,7 +18,7 @@ RUN archi=$(echo $TARGETPLATFORM | cut -d / -f2) && \
     tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-$archi.tar.gz && \ 
     rm go${GOLANG_VERSION}.linux-$archi.tar.gz
 
-RUN curl --output wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz -L https://github.com/bytecodealliance/wasm-tools/releases/download/wasm-tools-${WASM_TOOLS_VERSION}/wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz
+RUN curl --output wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz -L https://github.com/bytecodealliance/wasm-tools/releases/download/v${WASM_TOOLS_VERSION}/wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz
 RUN tar xzf wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz
 RUN mv wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux/wasm-tools /usr/local/bin/wasm-tools
 RUN apt install -y -q make

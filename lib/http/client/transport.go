@@ -24,35 +24,35 @@ func BodyReaderCloser(b []byte) io.ReadCloser {
 	return bytesReaderCloser{bytes.NewReader(b)}
 }
 
-func schemeFromString(s string) wasi.WasiHttp0_2_0_rc_2023_11_10_TypesScheme {
+func schemeFromString(s string) wasi.WasiHttp0_2_0_TypesScheme {
 	switch s {
 	case "http":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesSchemeHttps()
+		return wasi.WasiHttp0_2_0_TypesSchemeHttps()
 	case "https":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesSchemeHttps()
+		return wasi.WasiHttp0_2_0_TypesSchemeHttps()
 	default:
 		panic(fmt.Sprintf("Unknown scheme: %s", s))
 	}
 }
 
-func methodFromString(m string) wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethod {
+func methodFromString(m string) wasi.WasiHttp0_2_0_TypesMethod {
 	switch m {
 	case "GET":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodGet()
+		return wasi.WasiHttp0_2_0_TypesMethodGet()
 	case "PUT":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPut()
+		return wasi.WasiHttp0_2_0_TypesMethodPut()
 	case "POST":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPost()
+		return wasi.WasiHttp0_2_0_TypesMethodPost()
 	case "DELETE":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodDelete()
+		return wasi.WasiHttp0_2_0_TypesMethodDelete()
 	case "OPTIONS":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodOptions()
+		return wasi.WasiHttp0_2_0_TypesMethodOptions()
 	case "PATCH":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodPatch()
+		return wasi.WasiHttp0_2_0_TypesMethodPatch()
 	case "CONNECT":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodConnect()
+		return wasi.WasiHttp0_2_0_TypesMethodConnect()
 	case "TRACE":
-		return wasi.WasiHttp0_2_0_rc_2023_11_10_TypesMethodTrace()
+		return wasi.WasiHttp0_2_0_TypesMethodTrace()
 	default:
 		panic(fmt.Sprintf("Unsupported method: %s", m))
 	}
@@ -82,10 +82,10 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	if _, ok := r.Header["User-agent"]; !ok {
 		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.1"}
 	}
-	strstr := []wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{}
+	strstr := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
 	for k, v := range r.Header {
 		// TODO: handle multi-headers here.
-		strstr = append(strstr, wasi.WasiHttp0_2_0_rc_2023_11_10_TypesTuple2FieldKeyFieldValueT{k, []uint8(v[0])})
+		strstr = append(strstr, wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{k, []uint8(v[0])})
 	}
 	headers := wasi.StaticFieldsFromList(strstr).Unwrap()
 
@@ -109,14 +109,14 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 		s.BlockingWriteAndFlush(b).Unwrap()
-		wasi.StaticOutgoingStreamDrop(s)
+		s.Drop()
 	}
 
-	var opts wasi.Option[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]
-	opts = wasi.None[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesRequestOptions]()
-	res := wasi.WasiHttp0_2_0_rc_2023_11_10_OutgoingHandlerHandle(req, opts).Unwrap()
+	var opts wasi.Option[wasi.WasiHttp0_2_0_TypesRequestOptions]
+	opts = wasi.None[wasi.WasiHttp0_2_0_TypesRequestOptions]()
+	res := wasi.WasiHttp0_2_0_OutgoingHandlerHandle(req, opts).Unwrap()
 
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_rc_2023_11_10_TypesFields]())
+	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesFields]())
 
 	resultOption := res.Get()
 	if resultOption.IsSome() {
@@ -127,8 +127,8 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	resultOption = res.Get()
 	result := resultOption.Unwrap().Unwrap().Unwrap()
 
-	wasi.StaticPollableDrop(poll)
-	wasi.StaticFutureIncomingResponseDrop(res)
+	poll.Drop()
+	res.Drop()
 
 	response := http.Response{
 		StatusCode: int(result.Status()),
@@ -142,7 +142,8 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		// TODO: handle multiple headers here.
 		response.Header[entry.F0] = []string{string(entry.F1)}
 	}
-	wasi.StaticFieldsDrop(responseHeaders)
+	responseHeaders.Drop()
+//	wasi.StaticFieldsDrop(responseHeaders)
 
 	responseBody := result.Consume().Unwrap()
 	stream := responseBody.Stream().Unwrap()
@@ -154,7 +155,7 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		dataResult := stream.Read(64 * 1024)
 		if dataResult.IsOk() {
 			data = append(data, dataResult.Unwrap()...)
-		} else if dataResult.UnwrapErr().Kind() == wasi.WasiIo0_2_0_rc_2023_11_10_StreamsStreamErrorKindClosed {
+		} else if dataResult.UnwrapErr().Kind() == wasi.WasiIo0_2_0_StreamsStreamErrorKindClosed {
 			break
 		} else {
 			return nil, fmt.Errorf("Error reading response stream")
@@ -163,7 +164,8 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	response.Body = bytesReaderCloser{bytes.NewReader(data)}
 
-	wasi.StaticIncomingResponseDrop(result)
+	result.Drop()
+//	wasi.StaticIncomingResponseDrop(result)
 	//wasi.StaticOutgoingRequestDrop(req)
 	//
 	//wasi.StaticIncomingStreamDrop(stream)

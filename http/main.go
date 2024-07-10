@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	wasiclient "github.com/dev-wasm/dev-wasm-go/http/client"
-	"github.com/dev-wasm/dev-wasm-go/wasi"
+	wasiclient "github.com/dev-wasm/dev-wasm-go/lib/http/client"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
 )
 
 func printResponse(r *http.Response) {
@@ -29,14 +29,21 @@ func(r runner) Run() wasi.Result[struct{}, struct{}] {
 }
 
 func init() {
-	wasi.SetExportsWasiCli0_2_0_rc_2023_11_10_Run(runner{})
+	wasi.SetExportsWasiCli0_2_0_Run(runner{})
 }
 
 func main() {
-	client := http.Client{
+	client := &http.Client{
 		Transport: wasiclient.WasiRoundTripper{},
 	}
-	res, err := client.Get("https://postman-echo.com/get")
+	req, err := http.NewRequest("GET", "https://postman-echo.com/get", nil)
+	if err != nil {
+		panic(err.Error())
+	}
+	if req == nil {
+		panic("Nil request!")
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -50,7 +57,7 @@ func main() {
 	defer res.Body.Close()
 	printResponse(res)
 
-	res, err = wasiclient.Put(&client, "http://postman-echo.com/put", "application/json", wasiclient.BodyReaderCloser([]byte("{\"baz\": \"blah\"}")))
+	res, err = wasiclient.Put(client, "http://postman-echo.com/put", "application/json", wasiclient.BodyReaderCloser([]byte("{\"baz\": \"blah\"}")))
 	if err != nil {
 		panic(err.Error())
 	}

@@ -6,9 +6,9 @@
     },
     "features": {
         "devwasm.azurecr.io/dev-wasm/dev-wasm-feature/wasmtime-wasi:0.0.15": {
-            "version": "21",
-            "wasmtime_version": "v18.0.2",
-            "wit_version": "0.19.2"
+            "version": "22",
+            "wasmtime_version": "v22.0.0",
+            "wit_version": "0.27.0"
         },
         "ghcr.io/devcontainers/features/common-utils": {}
     },
