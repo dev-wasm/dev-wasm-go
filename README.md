@@ -26,8 +26,13 @@ Visual studio should prompt you to see if you want to relaunch the workspace in 
 
 ## Simple example
 ```sh
+# Build with TinyGo
 tinygo build -target=wasi -o main.wasm main.go
-wasmtime --dir . main.wasm
+# Or Build with Golang native
+GOOS=wasip1 GOARCH=wasm go build -o main.wasm main.go
+
+# Run it
+wasmtime --dir .::/ main.wasm
 ```
 
 

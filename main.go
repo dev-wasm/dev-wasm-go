@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 type WasmGo struct {
-	Message string;
+	Message string
 }
 
 func (w *WasmGo) Print() {
@@ -14,15 +14,15 @@ func (w *WasmGo) Print() {
 }
 
 func (w *WasmGo) Write(file string, text string) error {
-	return ioutil.WriteFile(file, []byte(text), 0x444)
+	return os.WriteFile(file, []byte(text), 0x444)
 }
 
 func (w *WasmGo) Copy(from string, to string) error {
-	data, err := ioutil.ReadFile(from)
+	data, err := os.ReadFile(from)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(to, data, 0x444)
+	return os.WriteFile(to, data, 0x444)
 }
 
 func main() {
