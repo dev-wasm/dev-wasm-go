@@ -8,10 +8,10 @@
 package types
 
 import (
-	monotonicclock "github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/clocks/monotonic-clock"
-	ioerror "github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/error"
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/poll"
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/streams"
+	monotonicclock "github.com/dev-wasm/dev-wasm-go/lib/wasi/clocks/monotonic-clock"
+	ioerror "github.com/dev-wasm/dev-wasm-go/lib/wasi/io/error"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/io/poll"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/io/streams"
 	"github.com/ydnar/wasm-tools-go/cm"
 )
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
 )
 
 type runner struct{}
@@ -14,7 +15,7 @@ func (r runner) Run() wasi.Result[struct{}, struct{}] {
 }
 
 func init() {
-	wasi.SetExportsWasiCli0_2_0_Run(runner{})
+	run.Exports.Run = runner.Run
 }
 
 func main() {

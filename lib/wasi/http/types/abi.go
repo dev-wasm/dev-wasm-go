@@ -3,7 +3,7 @@
 package types
 
 import (
-	monotonicclock "github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/clocks/monotonic-clock"
+	monotonicclock "github.com/dev-wasm/dev-wasm-go/lib/wasi/clocks/monotonic-clock"
 	"github.com/ydnar/wasm-tools-go/cm"
 	"unsafe"
 )

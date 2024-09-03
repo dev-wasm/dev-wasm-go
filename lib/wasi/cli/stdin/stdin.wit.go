@@ -4,7 +4,7 @@
 package stdin
 
 import (
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/streams"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/io/streams"
 	"github.com/ydnar/wasm-tools-go/cm"
 )
 

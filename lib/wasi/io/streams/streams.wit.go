@@ -10,8 +10,8 @@
 package streams
 
 import (
-	ioerror "github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/error"
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi/wasi/io/poll"
+	ioerror "github.com/dev-wasm/dev-wasm-go/lib/wasi/io/error"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/io/poll"
 	"github.com/ydnar/wasm-tools-go/cm"
 )
 
