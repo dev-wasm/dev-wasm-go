@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
+	outgoinghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/outgoing-handler"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
+	"github.com/ydnar/wasm-tools-go/cm"
 )
 
 type bytesReaderCloser struct {
@@ -24,35 +26,35 @@ func BodyReaderCloser(b []byte) io.ReadCloser {
 	return bytesReaderCloser{bytes.NewReader(b)}
 }
 
-func schemeFromString(s string) wasi.WasiHttp0_2_0_TypesScheme {
+func schemeFromString(s string) types.Scheme {
 	switch s {
 	case "http":
-		return wasi.WasiHttp0_2_0_TypesSchemeHttps()
+		return types.SchemeHTTP()
 	case "https":
-		return wasi.WasiHttp0_2_0_TypesSchemeHttps()
+		return types.SchemeHTTPS()
 	default:
 		panic(fmt.Sprintf("Unknown scheme: %s", s))
 	}
 }
 
-func methodFromString(m string) wasi.WasiHttp0_2_0_TypesMethod {
+func methodFromString(m string) types.Method {
 	switch m {
 	case "GET":
-		return wasi.WasiHttp0_2_0_TypesMethodGet()
+		return types.MethodGet()
 	case "PUT":
-		return wasi.WasiHttp0_2_0_TypesMethodPut()
+		return types.MethodPut()
 	case "POST":
-		return wasi.WasiHttp0_2_0_TypesMethodPost()
+		return types.MethodPost()
 	case "DELETE":
-		return wasi.WasiHttp0_2_0_TypesMethodDelete()
+		return types.MethodDelete()
 	case "OPTIONS":
-		return wasi.WasiHttp0_2_0_TypesMethodOptions()
+		return types.MethodOptions()
 	case "PATCH":
-		return wasi.WasiHttp0_2_0_TypesMethodPatch()
+		return types.MethodPatch()
 	case "CONNECT":
-		return wasi.WasiHttp0_2_0_TypesMethodConnect()
+		return types.MethodConnect()
 	case "TRACE":
-		return wasi.WasiHttp0_2_0_TypesMethodTrace()
+		return types.MethodTrace()
 	default:
 		panic(fmt.Sprintf("Unsupported method: %s", m))
 	}
@@ -80,55 +82,62 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		r.Header = http.Header{}
 	}
 	if _, ok := r.Header["User-agent"]; !ok {
-		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.1"}
+		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.2"}
 	}
-	strstr := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
+	strstr := []cm.Tuple[types.FieldKey, types.FieldValue]{}
 	for k, v := range r.Header {
 		// TODO: handle multi-headers here.
-		strstr = append(strstr, wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{k, []uint8(v[0])})
+		strstr = append(strstr, cm.Tuple[types.FieldKey, types.FieldValue]{types.FieldKey(k), types.FieldValue(cm.ToList([]uint8(v[0])))})
 	}
-	headers := wasi.StaticFieldsFromList(strstr).Unwrap()
+	res := types.FieldsFromList(cm.ToList(strstr))
+	headers := res.OK()
 
 	method := methodFromString(r.Method)
-	scheme := wasi.Some(schemeFromString(r.URL.Scheme))
+	scheme := cm.Some(schemeFromString(r.URL.Scheme))
 
-	path_with_query := wasi.Some(r.URL.RequestURI())
-	authority := wasi.Some(r.URL.Host)
+	path_with_query := cm.Some(r.URL.RequestURI())
+	authority := cm.Some(r.URL.Host)
 
-	req := wasi.NewOutgoingRequest(headers)
+	req := types.NewOutgoingRequest(*headers)
 	req.SetMethod(method)
 	req.SetPathWithQuery(path_with_query)
 	req.SetScheme(scheme)
 	req.SetAuthority(authority)
 
-	body := req.Body().Unwrap()
+	bodyRes := req.Body()
+	body := bodyRes.OK()
 	if r.Body != nil {
-		s := body.Write().Unwrap()
+		writeRes := body.Write()
+		s := writeRes.OK()
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
-		s.BlockingWriteAndFlush(b).Unwrap()
-		s.Drop()
+		s.BlockingWriteAndFlush(cm.ToList([]uint8(b)))
+		s.ResourceDrop()
 	}
 
-	var opts wasi.Option[wasi.WasiHttp0_2_0_TypesRequestOptions]
-	opts = wasi.None[wasi.WasiHttp0_2_0_TypesRequestOptions]()
-	res := wasi.WasiHttp0_2_0_OutgoingHandlerHandle(req, opts).Unwrap()
+	var opts cm.Option[types.RequestOptions]
+	opts = cm.None[types.RequestOptions]()
+	hRes := outgoinghandler.Handle(req, opts)
+	if !hRes.IsOK() {
+		panic("Failed to call client.")
+	}
 
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesFields]())
+	types.OutgoingBodyFinish(*body, cm.None[types.Fields]())
 
-	resultOption := res.Get()
-	if resultOption.IsSome() {
+	future := hRes.OK()
+	resultOption := future.Get()
+	if !resultOption.None() {
 		return nil, fmt.Errorf("result already taken!")
 	}
-	poll := res.Subscribe()
+	poll := future.Subscribe()
 	poll.Block()
-	resultOption = res.Get()
-	result := resultOption.Unwrap().Unwrap().Unwrap()
+	resultOption = future.Get()
+	result := resultOption.Some().OK().OK()
 
-	poll.Drop()
-	res.Drop()
+	poll.ResourceDrop()
+	future.ResourceDrop()
 
 	response := http.Response{
 		StatusCode: int(result.Status()),
@@ -138,24 +147,26 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	responseHeaders := result.Headers()
 	entries := responseHeaders.Entries()
 
-	for _, entry := range entries {
+	for _, entry := range entries.Slice() {
 		// TODO: handle multiple headers here.
-		response.Header[entry.F0] = []string{string(entry.F1)}
+		response.Header[string(entry.F0)] = []string{string(entry.F1.Slice())}
 	}
-	responseHeaders.Drop()
-//	wasi.StaticFieldsDrop(responseHeaders)
+	responseHeaders.ResourceDrop()
+	//	wasi.StaticFieldsDrop(responseHeaders)
 
-	responseBody := result.Consume().Unwrap()
-	stream := responseBody.Stream().Unwrap()
+	bRes := result.Consume()
+	responseBody := bRes.OK()
+	sRes := responseBody.Stream()
+	stream := sRes.OK()
 	inputPoll := stream.Subscribe()
 
 	data := []uint8{}
 	for {
 		inputPoll.Block()
 		dataResult := stream.Read(64 * 1024)
-		if dataResult.IsOk() {
-			data = append(data, dataResult.Unwrap()...)
-		} else if dataResult.UnwrapErr().Kind() == wasi.WasiIo0_2_0_StreamsStreamErrorKindClosed {
+		if dataResult.IsOK() {
+			data = append(data, dataResult.OK().Slice()...)
+		} else if dataResult.Err().Closed() {
 			break
 		} else {
 			return nil, fmt.Errorf("Error reading response stream")
@@ -164,8 +175,8 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	response.Body = bytesReaderCloser{bytes.NewReader(data)}
 
-	result.Drop()
-//	wasi.StaticIncomingResponseDrop(result)
+	result.ResourceDrop()
+	//	wasi.StaticIncomingResponseDrop(result)
 	//wasi.StaticOutgoingRequestDrop(req)
 	//
 	//wasi.StaticIncomingStreamDrop(stream)

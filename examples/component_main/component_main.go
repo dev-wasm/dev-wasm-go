@@ -3,19 +3,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
+	"github.com/ydnar/wasm-tools-go/cm"
 )
 
-type runner struct{}
-
-func (r runner) Run() wasi.Result[struct{}, struct{}] {
+func Run() cm.BoolResult {
 	main()
-	return wasi.Ok[struct{}, struct{}](r)
+	return cm.BoolResult(false)
 }
 
 func init() {
-	run.Exports.Run = runner.Run
+	run.Exports.Run = Run
 }
 
 func main() {
