@@ -1,6 +1,6 @@
 .phony: clean run
 
-default: main_2023_11_10.component.wasm
+default: main.component.wasm
 
 main.wasm: ; tinygo build -target=wasi -o main.wasm -tags purego
 
