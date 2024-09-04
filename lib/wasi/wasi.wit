@@ -26,6 +26,4 @@ world wasi {
   /// or not reuse component instance when delivering incoming HTTP requests and
   /// thus a component must be able to handle 0..N calls to `handle`.
   export incoming-handler;
-
-  export wasi:cli/run@0.2.0;
 }

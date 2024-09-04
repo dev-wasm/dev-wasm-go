@@ -7,6 +7,16 @@ import (
 	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 )
 
+// This is required for building the module for some reason
+// I don't think it should be. I'm probably doing something
+// wrong.
+//
+//go:wasmexport cabi_realloc
+//export cabi_realloc
+func wasmexport_cabi_realloc(a, b, c, d uint32) uint32 {
+	return 0
+}
+
 var count = 0
 
 type myHandler struct{}

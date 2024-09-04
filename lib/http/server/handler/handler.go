@@ -4,15 +4,29 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/dev-wasm/dev-wasm-go/lib/wasi"
+	incominghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/incoming-handler"
+	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
+	"github.com/ydnar/wasm-tools-go/cm"
 )
 
 var h = &handler{
 	handler: http.DefaultServeMux,
 }
 
+func OK[Shape, T, Err any](val cm.Result[Shape, T, Err]) *T {
+	return (&val).OK()
+}
+
+func Some[T any](val cm.Option[T]) *T {
+	return (&val).Some()
+}
+
+func theHandler(req types.IncomingRequest, res types.ResponseOutparam) {
+	h.Handle(req, res)
+}
+
 func init() {
-	wasi.SetExportsWasiHttp0_2_0_IncomingHandler(h)
+	incominghandler.Exports.Handle = theHandler
 }
 
 func HandleFunc(pattern string, fn http.HandlerFunc) {
@@ -41,36 +55,46 @@ func (w *wasmResponseWriter) Write(data []byte) (int, error) {
 	return w.body.Write(data)
 }
 
-func methodToString(method wasi.WasiHttp0_2_0_TypesMethod) string {
-	switch method.Kind() {
-	case wasi.WasiHttp0_2_0_TypesMethodKindGet:
+func methodToString(method types.Method) string {
+	if method.Get() {
 		return "GET"
-	case wasi.WasiHttp0_2_0_TypesMethodKindPut:
-		return "PUT"
-	case wasi.WasiHttp0_2_0_TypesMethodKindPost:
-		return "POST"
-	case wasi.WasiHttp0_2_0_TypesMethodKindDelete:
-		return "DELETE"
-	default:
-		panic("unsupported method")
 	}
+	if method.Put() {
+		return "PUT"
+	}
+	if method.Post() {
+		return "POST"
+	}
+	if method.Patch() {
+		return "PATCH"
+	}
+	if method.Connect() {
+		return "CONNECT"
+	}
+	if method.Delete() {
+		return "DELETE"
+	}
+	panic("unsupported method")
 }
 
-func (h *handler) HandleError(msg string, req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_TypesResponseOutparam) {
-	headers := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
-	hdrs := wasi.StaticFieldsFromList(headers).Unwrap()
-	response := wasi.NewOutgoingResponse(hdrs)
+func (h *handler) HandleError(msg string, req types.IncomingRequest, responseOut types.ResponseOutparam) {
+	headers := []cm.Tuple[types.FieldKey, types.FieldValue]{}
+	hdrs := cm.ToList(headers)
+	res := types.FieldsFromList(hdrs)
+	response := types.NewOutgoingResponse(*res.OK())
 	response.SetStatusCode(500)
-	body := response.Body().Unwrap()
-	resResult := wasi.Ok[wasi.WasiHttp0_2_0_TypesOutgoingResponse, wasi.WasiHttp0_2_0_TypesErrorCode](response)
-	wasi.StaticResponseOutparamSet(responseOut, resResult)
+	body := OK(response.Body())
+	resResult := cm.OK[cm.Result[types.ErrorCodeShape, types.OutgoingResponse, types.ErrorCode]](response)
+	types.ResponseOutparamSet(responseOut, resResult)
 
-	out := body.Write().Unwrap()
-	out.BlockingWriteAndFlush([]uint8(msg)).Unwrap()
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesTrailers]())
+	out := OK(body.Write())
+	// TODO: test response here.
+	out.BlockingWriteAndFlush(cm.ToList([]uint8(msg)))
+
+	types.OutgoingBodyFinish(*body, cm.None[types.Fields]())
 }
 
-func (h *handler) Handle(req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOut wasi.WasiHttp0_2_0_TypesResponseOutparam) {
+func (h *handler) Handle(req types.IncomingRequest, responseOut types.ResponseOutparam) {
 	defer func() {
 		if r := recover(); r != nil {
 			msg := "unknown panic"
@@ -86,10 +110,10 @@ func (h *handler) Handle(req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOu
 		}
 	}()
 
-	path := req.PathWithQuery().Unwrap()
+	path := Some(req.PathWithQuery())
 	method := req.Method()
 
-	goReq, err := http.NewRequest(methodToString(method), path, &bytes.Buffer{})
+	goReq, err := http.NewRequest(methodToString(method), *path, &bytes.Buffer{})
 	if err != nil {
 		h.HandleError(err.Error(), req, responseOut)
 		return
@@ -101,30 +125,30 @@ func (h *handler) Handle(req wasi.WasiHttp0_2_0_TypesIncomingRequest, responseOu
 	}
 	h.handler.ServeHTTP(&goRes, goReq)
 
-	headers := []wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{}
+	headers := []cm.Tuple[types.FieldKey, types.FieldValue]{}
 	for key, val := range goRes.header {
 		for ix := range val {
-			headers = append(headers, wasi.WasiHttp0_2_0_TypesTuple2FieldKeyFieldValueT{
-				F0: key,
-				F1: []uint8(val[ix]),
+			headers = append(headers, cm.Tuple[types.FieldKey, types.FieldValue]{
+				F0: types.FieldKey(key),
+				F1: types.FieldValue(cm.ToList([]uint8(val[ix]))),
 			})
 		}
 	}
-	f := wasi.StaticFieldsFromList(headers).Unwrap()
+	f := OK(types.FieldsFromList(cm.ToList(headers)))
 
-	res := wasi.NewOutgoingResponse(f)
-	res.SetStatusCode(uint16(goRes.code))
-	body := res.Body().Unwrap()
+	res := types.NewOutgoingResponse(*f)
+	res.SetStatusCode(types.StatusCode(goRes.code))
+	body := OK(res.Body())
 
-	result := wasi.Ok[wasi.WasiHttp0_2_0_TypesOutgoingResponse, wasi.WasiHttp0_2_0_TypesErrorCode](res)
+	result := cm.OK[cm.Result[types.ErrorCodeShape, types.OutgoingResponse, types.ErrorCode]](res)
 
-	wasi.StaticResponseOutparamSet(responseOut, result)
+	types.ResponseOutparamSet(responseOut, result)
 
-	stream := body.Write().Unwrap()
-	stream.BlockingWriteAndFlush([]byte(goRes.body.Bytes()))
-	stream.Drop()
+	stream := OK(body.Write())
+	stream.BlockingWriteAndFlush(cm.ToList([]byte(goRes.body.Bytes())))
+	stream.ResourceDrop()
 
-	wasi.StaticOutgoingBodyFinish(body, wasi.None[wasi.WasiHttp0_2_0_TypesTrailers]())
+	types.OutgoingBodyFinish(*body, cm.None[types.Fields]())
 }
 
 func ListenAndServe(handler http.Handler) error {
