@@ -7,16 +7,9 @@ import (
 	"unsafe"
 
 	wasiclient "github.com/dev-wasm/dev-wasm-go/lib/http/client"
-	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
 	"github.com/ydnar/wasm-tools-go/cm"
 )
-
-type myHandler struct{}
-
-func (h myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-}
 
 // This is required for building the module for some reason
 // I don't think it should be. I'm probably doing something
@@ -55,7 +48,6 @@ func Run() cm.BoolResult {
 
 func init() {
 	run.Exports.Run = Run
-	handler.ListenAndServe(myHandler{})
 }
 
 func main() {
