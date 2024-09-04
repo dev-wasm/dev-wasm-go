@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"unsafe"
 
 	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 )
@@ -11,10 +12,18 @@ import (
 // I don't think it should be. I'm probably doing something
 // wrong.
 //
+// fwiw, I think this is likely buggy and either leaks memory
+// or has race conditions.
+//
 //go:wasmexport cabi_realloc
 //export cabi_realloc
-func wasmexport_cabi_realloc(a, b, c, d uint32) uint32 {
-	return 0
+func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
+	if newSize == 0 {
+		return align
+	}
+	arr := make([]uint8, newSize)
+	newPtr := unsafe.Pointer(unsafe.SliceData(arr))
+	return uint32(uintptr(newPtr))
 }
 
 var count = 0
