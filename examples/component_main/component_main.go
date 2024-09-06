@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
 	"github.com/ydnar/wasm-tools-go/cm"
@@ -18,4 +20,6 @@ func init() {
 
 func main() {
 	fmt.Println("Hello world!")
+	fmt.Printf("Time is: %v\n", time.Now())
+	fmt.Printf("Random number is %v\n", rand.Int())
 }

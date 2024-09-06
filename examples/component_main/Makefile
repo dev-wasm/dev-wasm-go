@@ -4,7 +4,7 @@ default: main.component.wasm
 
 wasi-cli-0.2.0: ; wget https://github.com/WebAssembly/wasi-cli/archive/refs/tags/v0.2.0.tar.gz ; tar -xzf v0.2.0.tar.gz ; rm v0.2.0.tar.gz
 
-main.wasm: ; tinygo build -target=wasi -o main.wasm -tags purego
+main.wasm: component_main.go ; tinygo build -target=wasi -o main.wasm -tags purego
 
 main.embed.wasm: main.wasm wasi-cli-0.2.0; wasm-tools component embed wasi-cli-0.2.0/wit/ -w command main.wasm -o main.embed.wasm
 

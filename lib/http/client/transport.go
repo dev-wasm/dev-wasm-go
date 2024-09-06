@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -12,6 +11,10 @@ import (
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
 	"github.com/ydnar/wasm-tools-go/cm"
 )
+
+func OK[Shape, T, Err any](val cm.Result[Shape, T, Err]) *T {
+	return (&val).OK()
+}
 
 type bytesReaderCloser struct {
 	*bytes.Reader
@@ -77,17 +80,23 @@ func Put(client *http.Client, uri, contentType string, body io.ReadCloser) (*htt
 
 type WasiRoundTripper struct{}
 
-func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	if r.Header == nil {
 		r.Header = http.Header{}
 	}
-	if _, ok := r.Header["User-agent"]; !ok {
+	if _, ok := r.Header["User-Agent"]; !ok {
 		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.2"}
 	}
 	strstr := []cm.Tuple[types.FieldKey, types.FieldValue]{}
 	for k, v := range r.Header {
 		// TODO: handle multi-headers here.
-		strstr = append(strstr, cm.Tuple[types.FieldKey, types.FieldValue]{types.FieldKey(k), types.FieldValue(cm.ToList([]uint8(v[0])))})
+		strstr = append(
+			strstr,
+			cm.Tuple[types.FieldKey, types.FieldValue]{
+				F0: types.FieldKey(k),
+				F1: types.FieldValue(cm.ToList([]uint8(v[0]))),
+			},
+		)
 	}
 	res := types.FieldsFromList(cm.ToList(strstr))
 	headers := res.OK()
@@ -104,22 +113,18 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	req.SetScheme(scheme)
 	req.SetAuthority(authority)
 
-	bodyRes := req.Body()
-	body := bodyRes.OK()
+	body := OK(req.Body())
 	if r.Body != nil {
-		writeRes := body.Write()
-		s := writeRes.OK()
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(io.Reader(r.Body))
 		if err != nil {
 			return nil, err
 		}
+		s := OK(body.Write())
 		s.BlockingWriteAndFlush(cm.ToList([]uint8(b)))
 		s.ResourceDrop()
 	}
 
-	var opts cm.Option[types.RequestOptions]
-	opts = cm.None[types.RequestOptions]()
-	hRes := outgoinghandler.Handle(req, opts)
+	hRes := outgoinghandler.Handle(req, cm.None[types.RequestOptions]())
 	if !hRes.IsOK() {
 		panic("Failed to call client.")
 	}
@@ -127,17 +132,17 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	types.OutgoingBodyFinish(*body, cm.None[types.Fields]())
 
 	future := hRes.OK()
+	defer future.ResourceDrop()
 	resultOption := future.Get()
 	if !resultOption.None() {
-		return nil, fmt.Errorf("result already taken!")
+		return nil, fmt.Errorf("result already taken")
 	}
 	poll := future.Subscribe()
+	defer poll.ResourceDrop()
 	poll.Block()
 	resultOption = future.Get()
 	result := resultOption.Some().OK().OK()
-
-	poll.ResourceDrop()
-	future.ResourceDrop()
+	defer result.ResourceDrop()
 
 	response := http.Response{
 		StatusCode: int(result.Status()),
@@ -152,13 +157,13 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		response.Header[string(entry.F0)] = []string{string(entry.F1.Slice())}
 	}
 	responseHeaders.ResourceDrop()
-	//	wasi.StaticFieldsDrop(responseHeaders)
 
-	bRes := result.Consume()
-	responseBody := bRes.OK()
-	sRes := responseBody.Stream()
-	stream := sRes.OK()
+	responseBody := OK(result.Consume())
+	defer responseBody.ResourceDrop()
+	stream := OK(responseBody.Stream())
+	defer stream.ResourceDrop()
 	inputPoll := stream.Subscribe()
+	defer inputPoll.ResourceDrop()
 
 	data := []uint8{}
 	for {
@@ -169,18 +174,11 @@ func (_ WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		} else if dataResult.Err().Closed() {
 			break
 		} else {
-			return nil, fmt.Errorf("Error reading response stream")
+			return nil, fmt.Errorf("error reading response stream")
 		}
 	}
 
 	response.Body = bytesReaderCloser{bytes.NewReader(data)}
-
-	result.ResourceDrop()
-	//	wasi.StaticIncomingResponseDrop(result)
-	//wasi.StaticOutgoingRequestDrop(req)
-	//
-	//wasi.StaticIncomingStreamDrop(stream)
-	//
 
 	return &response, nil
 }
