@@ -13,6 +13,8 @@ import (
 	"github.com/ydnar/wasm-tools-go/cm"
 )
 
+const DEFAULT_USER_AGENT = "WASI-HTTP-Go/0.0.2"
+
 func OK[Shape, T, Err any](val cm.Result[Shape, T, Err]) *T {
 	return (&val).OK()
 }
@@ -81,12 +83,12 @@ func Put(client *http.Client, uri, contentType string, body io.ReadCloser) (*htt
 
 type WasiRoundTripper struct{}
 
-func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+func initHeaders(r *http.Request) {
 	if r.Header == nil {
 		r.Header = http.Header{}
 	}
 	if _, ok := r.Header["User-Agent"]; !ok {
-		r.Header["User-Agent"] = []string{"WASI-HTTP-Go/0.0.2"}
+		r.Header["User-Agent"] = []string{DEFAULT_USER_AGENT}
 	}
 	if r.Close {
 		r.Header["Connection"] = []string{"close"}
@@ -98,19 +100,47 @@ func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 			}
 		}
 	}
+}
 
+func makeHeaders(r *http.Request) cm.List[cm.Tuple[types.FieldKey, types.FieldValue]] {
 	strstr := []cm.Tuple[types.FieldKey, types.FieldValue]{}
 	for k, v := range r.Header {
-		// TODO: handle multi-headers here.
-		strstr = append(
-			strstr,
-			cm.Tuple[types.FieldKey, types.FieldValue]{
-				F0: types.FieldKey(k),
-				F1: types.FieldValue(cm.ToList([]uint8(v[0]))),
-			},
-		)
+		for _, str := range v {
+			strstr = append(
+				strstr,
+				cm.Tuple[types.FieldKey, types.FieldValue]{
+					F0: types.FieldKey(k),
+					F1: types.FieldValue(cm.ToList([]uint8(str))),
+				},
+			)
+		}
 	}
-	res := types.FieldsFromList(cm.ToList(strstr))
+	return cm.ToList(strstr)
+}
+
+func getAuthority(r *http.Request) string {
+	if len(r.Host) > 0 {
+		return r.Host
+	} else {
+		return r.URL.Host
+	}
+}
+
+func populateResponseHeaders(fields cm.List[cm.Tuple[types.FieldKey, types.FieldValue]], r *http.Response) {
+	if r.Header == nil {
+		r.Header = http.Header{}
+	}
+	for _, field := range fields.Slice() {
+		key := string(field.F0)
+		value := string(field.F1.Slice())
+		r.Header[key] = append(r.Header[key], value)
+	}
+}
+
+func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	initHeaders(r)
+
+	res := types.FieldsFromList(makeHeaders(r))
 	headers := res.OK()
 
 	method := methodFromString(r.Method)
@@ -118,13 +148,7 @@ func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	path_with_query := cm.Some(r.URL.RequestURI())
 
-	var authorityString string
-	if len(r.Host) > 0 {
-		authorityString = r.Host
-	} else {
-		authorityString = r.URL.Host
-	}
-	authority := cm.Some(authorityString)
+	authority := cm.Some(getAuthority(r))
 
 	req := types.NewOutgoingRequest(*headers)
 	req.SetMethod(method)
@@ -170,11 +194,8 @@ func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	responseHeaders := result.Headers()
 	entries := responseHeaders.Entries()
+	populateResponseHeaders(entries, &response)
 
-	for _, entry := range entries.Slice() {
-		// TODO: handle multiple headers here.
-		response.Header[string(entry.F0)] = []string{string(entry.F1.Slice())}
-	}
 	responseHeaders.ResourceDrop()
 
 	responseBody := OK(result.Consume())
