@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	outgoinghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/outgoing-handler"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
@@ -36,7 +37,7 @@ func schemeFromString(s string) types.Scheme {
 	case "https":
 		return types.SchemeHTTPS()
 	default:
-		panic(fmt.Sprintf("Unknown scheme: %s", s))
+		return types.SchemeOther(s)
 	}
 }
 
@@ -59,7 +60,7 @@ func methodFromString(m string) types.Method {
 	case "TRACE":
 		return types.MethodTrace()
 	default:
-		panic(fmt.Sprintf("Unsupported method: %s", m))
+		return types.MethodOther(m)
 	}
 }
 
@@ -85,8 +86,19 @@ func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		r.Header = http.Header{}
 	}
 	if _, ok := r.Header["User-Agent"]; !ok {
-		r.Header["User-agent"] = []string{"WASI-HTTP-Go/0.0.2"}
+		r.Header["User-Agent"] = []string{"WASI-HTTP-Go/0.0.2"}
 	}
+	if r.Close {
+		r.Header["Connection"] = []string{"close"}
+	}
+	if r.Body != nil {
+		if _, ok := r.Header["Content-Length"]; !ok {
+			if r.ContentLength > 0 {
+				r.Header["Content-Length"] = []string{strconv.Itoa(int(r.ContentLength))}
+			}
+		}
+	}
+
 	strstr := []cm.Tuple[types.FieldKey, types.FieldValue]{}
 	for k, v := range r.Header {
 		// TODO: handle multi-headers here.
@@ -105,7 +117,14 @@ func (WasiRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	scheme := cm.Some(schemeFromString(r.URL.Scheme))
 
 	path_with_query := cm.Some(r.URL.RequestURI())
-	authority := cm.Some(r.URL.Host)
+
+	var authorityString string
+	if len(r.Host) > 0 {
+		authorityString = r.Host
+	} else {
+		authorityString = r.URL.Host
+	}
+	authority := cm.Some(authorityString)
 
 	req := types.NewOutgoingRequest(*headers)
 	req.SetMethod(method)
