@@ -2,7 +2,9 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	incominghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/incoming-handler"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
@@ -14,6 +16,13 @@ var h = &handler{
 }
 
 func OK[Shape, T, Err any](val cm.Result[Shape, T, Err]) *T {
+	return (&val).OK()
+}
+
+func OKOrPanic[Shape, T, Err any](val cm.Result[Shape, T, Err]) *T {
+	if !val.IsOK() {
+		panic(fmt.Sprintf("a value is not OK as expected: %v", val))
+	}
 	return (&val).OK()
 }
 
@@ -52,7 +61,20 @@ func (w *wasmResponseWriter) WriteHeader(code int) {
 }
 
 func (w *wasmResponseWriter) Write(data []byte) (int, error) {
+	if w.code == 0 {
+		w.code = http.StatusOK
+	}
 	return w.body.Write(data)
+}
+
+func schemeToString(scheme *types.Scheme) string {
+	if scheme.HTTP() {
+		return "http"
+	}
+	if scheme.HTTPS() {
+		return "https"
+	}
+	return *scheme.Other()
 }
 
 func methodToString(method types.Method) string {
@@ -74,6 +96,12 @@ func methodToString(method types.Method) string {
 	if method.Delete() {
 		return "DELETE"
 	}
+	if method.Head() {
+		return "HEAD"
+	}
+	if method.Options() {
+		return "OPTIONS"
+	}
 	panic("unsupported method")
 }
 
@@ -88,8 +116,7 @@ func (h *handler) HandleError(msg string, req types.IncomingRequest, responseOut
 	types.ResponseOutparamSet(responseOut, resResult)
 
 	out := OK(body.Write())
-	// TODO: test response here.
-	out.BlockingWriteAndFlush(cm.ToList([]uint8(msg)))
+	OKOrPanic(out.BlockingWriteAndFlush(cm.ToList([]uint8(msg))))
 
 	types.OutgoingBodyFinish(*body, cm.None[types.Fields]())
 }
@@ -110,13 +137,52 @@ func (h *handler) Handle(req types.IncomingRequest, responseOut types.ResponseOu
 		}
 	}()
 
+	scheme := Some(req.Scheme())
+	authority := Some(req.Authority())
 	path := Some(req.PathWithQuery())
+	urlString := fmt.Sprintf("%s://%s%s", schemeToString(scheme), *authority, *path)
 	method := req.Method()
 
-	goReq, err := http.NewRequest(methodToString(method), *path, &bytes.Buffer{})
+	requestBody := OK(req.Consume())
+	bodyStream := OK(requestBody.Stream())
+
+	var buff []byte
+	for {
+		readResult := bodyStream.BlockingRead(1024 * 1024)
+		if readResult.IsErr() {
+			if readResult.Err().Closed() {
+				break
+			} else {
+				h.HandleError("Reading body failed!", req, responseOut)
+				return
+			}
+		} else {
+			bytes := readResult.OK().Slice()
+			buff = append(buff, bytes...)
+		}
+	}
+	bodyStream.ResourceDrop()
+	requestBody.ResourceDrop()
+
+	fields := req.Headers()
+	header := http.Header{}
+	for _, tuple := range fields.Entries().Slice() {
+		header[string(tuple.F0)] = append(header[string(tuple.F0)], string(tuple.F1.Slice()))
+	}
+
+	fields.ResourceDrop()
+	req.ResourceDrop()
+
+	goReq, err := http.NewRequest(methodToString(method), urlString, bytes.NewBuffer(buff))
 	if err != nil {
 		h.HandleError(err.Error(), req, responseOut)
 		return
+	}
+	goReq.Header = header
+	if length, ok := header["Content-Length"]; ok {
+		if contentLength, err := strconv.Atoi(length[0]); err == nil {
+			goReq.ContentLength = int64(contentLength)
+		}
 	}
 	goRes := wasmResponseWriter{
 		header: http.Header{},

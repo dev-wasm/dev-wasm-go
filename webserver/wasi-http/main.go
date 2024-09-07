@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"unsafe"
 
@@ -33,7 +34,21 @@ type myHandler struct{}
 func (h myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	count++
 	w.WriteHeader(200)
-	w.Write([]byte(fmt.Sprintf("Hello from WASM! (%d) %s", count, r.URL.Path)))
+	w.Write([]byte(fmt.Sprintf("Hello from WASM! (%d) %s\n", count, r.URL.Path)))
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+	} else {
+		w.Write(body)
+	}
+	w.Write([]byte("Headers\n"))
+	for k, v := range r.Header {
+		w.Write([]byte(k + v[0] + "\n"))
+	}
+	w.Write([]byte("Query\n"))
+	for k, v := range r.URL.Query() {
+		w.Write([]byte(k + ":" + v[0] + "\n"))
+	}
 }
 
 func init() {
