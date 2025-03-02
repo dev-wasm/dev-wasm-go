@@ -5,20 +5,21 @@ package stdin
 
 import (
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/io/streams"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
+
+// InputStream represents the imported type alias "wasi:cli/stdin@0.2.0#input-stream".
+//
+// See [streams.InputStream] for more information.
+type InputStream = streams.InputStream
 
 // GetStdin represents the imported function "get-stdin".
 //
 //	get-stdin: func() -> input-stream
 //
 //go:nosplit
-func GetStdin() (result streams.InputStream) {
+func GetStdin() (result InputStream) {
 	result0 := wasmimport_GetStdin()
-	result = cm.Reinterpret[streams.InputStream]((uint32)(result0))
+	result = cm.Reinterpret[InputStream]((uint32)(result0))
 	return
 }
-
-//go:wasmimport wasi:cli/stdin@0.2.0 get-stdin
-//go:noescape
-func wasmimport_GetStdin() (result0 uint32)

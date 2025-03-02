@@ -1,13 +1,10 @@
 module github.com/dev-wasm/dev-wasm-go/examples/component_main
 
+go 1.23.0
+
+replace github.com/dev-wasm/dev-wasm-go/lib v0.0.0 => ../../lib/
+
 require (
-	github.com/dev-wasm/dev-wasm-go v0.0.0-20240903232551-3526e9637f2b // indirect
-	github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240903233842-b25e2e499927 // indirect
-	github.com/ydnar/wasm-tools-go v0.1.5 // indirect
+	github.com/dev-wasm/dev-wasm-go/lib v0.0.0
+	go.bytecodealliance.org/cm v0.1.1-0.20250218151459-e57ac0139b6f
 )
-
-replace github.com/dev-wasm/dev-wasm-go/lib/ v0.0.0 => ../../lib/
-
-go 1.22.0
-
-toolchain go1.23.0

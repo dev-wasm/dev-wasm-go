@@ -8,14 +8,14 @@ package incominghandler
 
 import (
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
-	"github.com/ydnar/wasm-tools-go/cm"
 )
 
-//go:wasmexport wasi:http/incoming-handler@0.2.0#handle
-//export wasi:http/incoming-handler@0.2.0#handle
-func wasmexport_Handle(request0 uint32, responseOut0 uint32) {
-	request := cm.Reinterpret[types.IncomingRequest]((uint32)(request0))
-	responseOut := cm.Reinterpret[types.ResponseOutparam]((uint32)(responseOut0))
-	Exports.Handle(request, responseOut)
-	return
-}
+// IncomingRequest represents the exported type alias "wasi:http/incoming-handler@0.2.0#incoming-request".
+//
+// See [types.IncomingRequest] for more information.
+type IncomingRequest = types.IncomingRequest
+
+// ResponseOutparam represents the exported type alias "wasi:http/incoming-handler@0.2.0#response-outparam".
+//
+// See [types.ResponseOutparam] for more information.
+type ResponseOutparam = types.ResponseOutparam

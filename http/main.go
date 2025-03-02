@@ -8,7 +8,7 @@ import (
 
 	wasiclient "github.com/dev-wasm/dev-wasm-go/lib/http/client"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 // This is required for building the module for some reason
