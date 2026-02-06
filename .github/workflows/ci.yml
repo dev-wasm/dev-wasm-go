@@ -52,8 +52,11 @@ jobs:
       run: |
         GOOS=wasip1 GOARCH=wasm go build -o main.wasm main.go
 
-    - name: Upload WASM artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: wasm-binary
-        path: main.wasm
+    - name: Install wasmtime
+      run: |
+        curl https://wasmtime.dev/install.sh -sSf | bash
+        echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
+    - name: Run WASM with wasmtime
+      run: |
+        $HOME/.wasmtime/bin/wasmtime --dir .::/ main.wasm
