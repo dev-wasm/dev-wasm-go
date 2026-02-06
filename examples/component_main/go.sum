@@ -1,7 +1,3 @@
-github.com/dev-wasm/dev-wasm-go v0.0.0-20240903232551-3526e9637f2b h1:ePgn3zA/f73orXx0LO/UPL8gausq6w3CGdEfFuq2mFM=
-github.com/dev-wasm/dev-wasm-go v0.0.0-20240903232551-3526e9637f2b/go.mod h1:0B1yjENHxtWKjCfmluGgtezq/bfen86rNhVTZBiLo6E=
-github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240828183202-21561ad166e4 h1:WVwIL8iF8suKXHzdVDefkFo1mjYvMOoA5SnLrjrtUOY=
-github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240828183202-21561ad166e4/go.mod h1:eyHGUpflr/37EgTuiJg+m+qz9zVeq6Ffk1ltvWMb8qY=
 github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240903233842-b25e2e499927 h1:6d2BT8T/D7NZ/8sIGFn03t5fuvYlRaVQuxb0IyVzPo8=
 github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240903233842-b25e2e499927/go.mod h1:xi8sLzp98HaAHL9V87SHzaHnO67qi6fyUVH2JRUA4Ds=
 github.com/ydnar/wasm-tools-go v0.1.5 h1:ah2WT4gH0IrmN29ZSsjgNC9SPsdXZ+KN+o9uTZqNVSI=
