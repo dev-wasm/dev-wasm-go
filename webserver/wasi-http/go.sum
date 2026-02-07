@@ -1,2 +1,2 @@
-github.com/ydnar/wasm-tools-go v0.1.5 h1:ah2WT4gH0IrmN29ZSsjgNC9SPsdXZ+KN+o9uTZqNVSI=
-github.com/ydnar/wasm-tools-go v0.1.5/go.mod h1:L3sDi5rbAMJNmMO5cpDRzYYhB0r9xIU0xgpKjwU0Adg=
+go.bytecodealliance.org/cm v0.1.1-0.20250218151459-e57ac0139b6f h1:cHJcIruuUZwd7rDdcJHOVotufiO+qPfFwcxb6uCUVSI=
+go.bytecodealliance.org/cm v0.1.1-0.20250218151459-e57ac0139b6f/go.mod h1:NZ2UT0DyGhBfpIPOxPMCuG6g1YTR4YF3xweD7mHX5VQ=

@@ -4,7 +4,7 @@
 package run
 
 import (
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 //go:wasmexport wasi:cli/run@0.2.0#run

@@ -8,7 +8,7 @@ import (
 
 	incominghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/incoming-handler"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 var h = &handler{

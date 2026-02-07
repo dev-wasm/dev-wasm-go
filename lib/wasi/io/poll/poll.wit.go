@@ -7,7 +7,7 @@
 package poll
 
 import (
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 // Pollable represents the imported resource "wasi:io/poll@0.2.0#pollable".
@@ -28,10 +28,6 @@ func (self Pollable) ResourceDrop() {
 	return
 }
 
-//go:wasmimport wasi:io/poll@0.2.0 [resource-drop]pollable
-//go:noescape
-func wasmimport_PollableResourceDrop(self0 uint32)
-
 // Block represents the imported method "block".
 //
 // `block` returns immediately if the pollable is ready, and otherwise
@@ -49,10 +45,6 @@ func (self Pollable) Block() {
 	return
 }
 
-//go:wasmimport wasi:io/poll@0.2.0 [method]pollable.block
-//go:noescape
-func wasmimport_PollableBlock(self0 uint32)
-
 // Ready represents the imported method "ready".
 //
 // Return the readiness of a pollable. This function never blocks.
@@ -65,13 +57,9 @@ func wasmimport_PollableBlock(self0 uint32)
 func (self Pollable) Ready() (result bool) {
 	self0 := cm.Reinterpret[uint32](self)
 	result0 := wasmimport_PollableReady((uint32)(self0))
-	result = cm.U32ToBool((uint32)(result0))
+	result = (bool)(cm.U32ToBool((uint32)(result0)))
 	return
 }
-
-//go:wasmimport wasi:io/poll@0.2.0 [method]pollable.ready
-//go:noescape
-func wasmimport_PollableReady(self0 uint32) (result0 uint32)
 
 // Poll represents the imported function "poll".
 //
@@ -102,7 +90,3 @@ func Poll(in cm.List[Pollable]) (result cm.List[uint32]) {
 	wasmimport_Poll((*Pollable)(in0), (uint32)(in1), &result)
 	return
 }
-
-//go:wasmimport wasi:io/poll@0.2.0 poll
-//go:noescape
-func wasmimport_Poll(in0 *Pollable, in1 uint32, result *cm.List[uint32])

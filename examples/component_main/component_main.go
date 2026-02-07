@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/cli/run"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 func Run() cm.BoolResult {

@@ -10,7 +10,7 @@ import (
 
 	outgoinghandler "github.com/dev-wasm/dev-wasm-go/lib/wasi/http/outgoing-handler"
 	"github.com/dev-wasm/dev-wasm-go/lib/wasi/http/types"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 )
 
 const DEFAULT_USER_AGENT = "WASI-HTTP-Go/0.0.2"

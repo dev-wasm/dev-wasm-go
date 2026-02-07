@@ -3,13 +3,13 @@
 package types
 
 import (
-	monotonicclock "github.com/dev-wasm/dev-wasm-go/lib/wasi/clocks/monotonic-clock"
-	"github.com/ydnar/wasm-tools-go/cm"
+	"go.bytecodealliance.org/cm"
 	"unsafe"
 )
 
 // OptionFieldSizePayloadShape is used for storage in variant or result types.
 type OptionFieldSizePayloadShape struct {
+	_     cm.HostLayout
 	shape [unsafe.Sizeof(cm.Option[FieldSizePayload]{})]byte
 }
 
@@ -28,7 +28,7 @@ func lower_Method(v Method) (f0 uint32, f1 *uint8, f2 uint32) {
 	f0 = (uint32)(v.Tag())
 	switch f0 {
 	case 9: // other
-		v1, v2 := cm.LowerString(*v.Other())
+		v1, v2 := cm.LowerString(*cm.Case[string](&v, 9))
 		f1 = (*uint8)(v1)
 		f2 = (uint32)(v2)
 	}
@@ -39,7 +39,7 @@ func lower_Scheme(v Scheme) (f0 uint32, f1 *uint8, f2 uint32) {
 	f0 = (uint32)(v.Tag())
 	switch f0 {
 	case 2: // other
-		v1, v2 := cm.LowerString(*v.Other())
+		v1, v2 := cm.LowerString(*cm.Case[string](&v, 2))
 		f1 = (*uint8)(v1)
 		f2 = (uint32)(v2)
 	}
@@ -58,7 +58,7 @@ func lower_OptionScheme(v cm.Option[Scheme]) (f0 uint32, f1 uint32, f2 *uint8, f
 	return
 }
 
-func lower_OptionDuration(v cm.Option[monotonicclock.Duration]) (f0 uint32, f1 uint64) {
+func lower_OptionDuration(v cm.Option[Duration]) (f0 uint32, f1 uint64) {
 	some := v.Some()
 	if some != nil {
 		f0 = 1
@@ -70,6 +70,7 @@ func lower_OptionDuration(v cm.Option[monotonicclock.Duration]) (f0 uint32, f1 u
 
 // ErrorCodeShape is used for storage in variant or result types.
 type ErrorCodeShape struct {
+	_     cm.HostLayout
 	shape [unsafe.Sizeof(ErrorCode{})]byte
 }
 
@@ -149,86 +150,86 @@ func lower_ErrorCode(v ErrorCode) (f0 uint32, f1 uint32, f2 uint64, f3 uint32, f
 	f0 = (uint32)(v.Tag())
 	switch f0 {
 	case 1: // DNS-error
-		v1, v2, v3, v4, v5 := lower_DNSErrorPayload(*v.DNSError())
+		v1, v2, v3, v4, v5 := lower_DNSErrorPayload(*cm.Case[DNSErrorPayload](&v, 1))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 		f4 = (uint32)(v4)
 		f5 = (uint32)(v5)
 	case 14: // TLS-alert-received
-		v1, v2, v3, v4, v5 := lower_TLSAlertReceivedPayload(*v.TLSAlertReceived())
+		v1, v2, v3, v4, v5 := lower_TLSAlertReceivedPayload(*cm.Case[TLSAlertReceivedPayload](&v, 14))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 		f3 = (uint32)(v3)
-		f4 = cm.PointerToU32(v4)
+		f4 = (uint32)(cm.PointerToU32(v4))
 		f5 = (uint32)(v5)
 	case 17: // HTTP-request-body-size
-		v1, v2 := lower_OptionU64(*v.HTTPRequestBodySize())
+		v1, v2 := lower_OptionU64(*cm.Case[cm.Option[uint64]](&v, 17))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 21: // HTTP-request-header-section-size
-		v1, v2 := lower_OptionU32(*v.HTTPRequestHeaderSectionSize())
+		v1, v2 := lower_OptionU32(*cm.Case[cm.Option[uint32]](&v, 21))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 22: // HTTP-request-header-size
-		v1, v2, v3, v4, v5, v6 := lower_OptionFieldSizePayload(*v.HTTPRequestHeaderSize())
+		v1, v2, v3, v4, v5, v6 := lower_OptionFieldSizePayload(*cm.Case[cm.Option[FieldSizePayload]](&v, 22))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
-		f3 = cm.PointerToU32(v3)
+		f3 = (uint32)(cm.PointerToU32(v3))
 		f4 = (uint32)(v4)
 		f5 = (uint32)(v5)
 		f6 = (uint32)(v6)
 	case 23: // HTTP-request-trailer-section-size
-		v1, v2 := lower_OptionU32(*v.HTTPRequestTrailerSectionSize())
+		v1, v2 := lower_OptionU32(*cm.Case[cm.Option[uint32]](&v, 23))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 24: // HTTP-request-trailer-size
-		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*v.HTTPRequestTrailerSize())
+		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*cm.Case[FieldSizePayload](&v, 24))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 		f4 = (uint32)(v4)
 		f5 = (uint32)(v5)
 	case 26: // HTTP-response-header-section-size
-		v1, v2 := lower_OptionU32(*v.HTTPResponseHeaderSectionSize())
+		v1, v2 := lower_OptionU32(*cm.Case[cm.Option[uint32]](&v, 26))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 27: // HTTP-response-header-size
-		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*v.HTTPResponseHeaderSize())
+		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*cm.Case[FieldSizePayload](&v, 27))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 		f4 = (uint32)(v4)
 		f5 = (uint32)(v5)
 	case 28: // HTTP-response-body-size
-		v1, v2 := lower_OptionU64(*v.HTTPResponseBodySize())
+		v1, v2 := lower_OptionU64(*cm.Case[cm.Option[uint64]](&v, 28))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 29: // HTTP-response-trailer-section-size
-		v1, v2 := lower_OptionU32(*v.HTTPResponseTrailerSectionSize())
+		v1, v2 := lower_OptionU32(*cm.Case[cm.Option[uint32]](&v, 29))
 		f1 = (uint32)(v1)
 		f2 = (uint64)(v2)
 	case 30: // HTTP-response-trailer-size
-		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*v.HTTPResponseTrailerSize())
+		v1, v2, v3, v4, v5 := lower_FieldSizePayload(*cm.Case[FieldSizePayload](&v, 30))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 		f4 = (uint32)(v4)
 		f5 = (uint32)(v5)
 	case 31: // HTTP-response-transfer-coding
-		v1, v2, v3 := lower_OptionString(*v.HTTPResponseTransferCoding())
+		v1, v2, v3 := lower_OptionString(*cm.Case[cm.Option[string]](&v, 31))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 	case 32: // HTTP-response-content-coding
-		v1, v2, v3 := lower_OptionString(*v.HTTPResponseContentCoding())
+		v1, v2, v3 := lower_OptionString(*cm.Case[cm.Option[string]](&v, 32))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 	case 38: // internal-error
-		v1, v2, v3 := lower_OptionString(*v.InternalError())
+		v1, v2, v3 := lower_OptionString(*cm.Case[cm.Option[string]](&v, 38))
 		f1 = (uint32)(v1)
-		f2 = cm.PointerToU64(v2)
+		f2 = (uint64)(cm.PointerToU64(v2))
 		f3 = (uint32)(v3)
 	}
 	return
@@ -252,12 +253,7 @@ func lower_ResultOutgoingResponseErrorCode(v cm.Result[ErrorCodeShape, OutgoingR
 	return
 }
 
-// ResultOptionTrailersErrorCodeShape is used for storage in variant or result types.
-type ResultOptionTrailersErrorCodeShape struct {
-	shape [unsafe.Sizeof(cm.Result[ErrorCodeShape, cm.Option[Fields], ErrorCode]{})]byte
-}
-
-func lower_OptionTrailers(v cm.Option[Fields]) (f0 uint32, f1 uint32) {
+func lower_OptionTrailers(v cm.Option[Trailers]) (f0 uint32, f1 uint32) {
 	some := v.Some()
 	if some != nil {
 		f0 = 1
@@ -265,9 +261,4 @@ func lower_OptionTrailers(v cm.Option[Fields]) (f0 uint32, f1 uint32) {
 		f1 = (uint32)(v1)
 	}
 	return
-}
-
-// ResultIncomingResponseErrorCodeShape is used for storage in variant or result types.
-type ResultIncomingResponseErrorCodeShape struct {
-	shape [unsafe.Sizeof(cm.Result[ErrorCodeShape, IncomingResponse, ErrorCode]{})]byte
 }

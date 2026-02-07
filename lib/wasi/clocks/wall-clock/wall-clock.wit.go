@@ -18,6 +18,10 @@
 // It is intended for reporting the current date and time for humans.
 package wallclock
 
+import (
+	"go.bytecodealliance.org/cm"
+)
+
 // DateTime represents the record "wasi:clocks/wall-clock@0.2.0#datetime".
 //
 // A time and date in seconds plus nanoseconds.
@@ -27,8 +31,9 @@ package wallclock
 //		nanoseconds: u32,
 //	}
 type DateTime struct {
-	Seconds     uint64
-	Nanoseconds uint32
+	_           cm.HostLayout `json:"-"`
+	Seconds     uint64        `json:"seconds"`
+	Nanoseconds uint32        `json:"nanoseconds"`
 }
 
 // Now represents the imported function "now".
@@ -55,10 +60,6 @@ func Now() (result DateTime) {
 	return
 }
 
-//go:wasmimport wasi:clocks/wall-clock@0.2.0 now
-//go:noescape
-func wasmimport_Now(result *DateTime)
-
 // Resolution represents the imported function "resolution".
 //
 // Query the resolution of the clock.
@@ -72,7 +73,3 @@ func Resolution() (result DateTime) {
 	wasmimport_Resolution(&result)
 	return
 }
-
-//go:wasmimport wasi:clocks/wall-clock@0.2.0 resolution
-//go:noescape
-func wasmimport_Resolution(result *DateTime)
