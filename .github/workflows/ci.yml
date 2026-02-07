@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Test root module
+      run: |
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic .
+        
+    - name: Test lib module
+      working-directory: ./lib
+      run: |
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Build main.go
+      run: |
+        go build -v -o main main.go
+        
+    - name: Build WASM with Go
+      run: |
+        GOOS=wasip1 GOARCH=wasm go build -o main.wasm main.go
+
+    - name: Install wasmtime
+      run: |
+        curl https://wasmtime.dev/install.sh -sSf | bash
+        echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
+    - name: Run WASM with wasmtime
+      run: |
+        $HOME/.wasmtime/bin/wasmtime --dir .::/ main.wasm
