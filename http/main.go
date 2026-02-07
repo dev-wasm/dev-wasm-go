@@ -44,6 +44,9 @@ func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
 }
 
 // allocated keeps references to allocated buffers to prevent GC
+// Note: This will grow unbounded, but WASM components are typically short-lived
+// request handlers where this is acceptable. For long-running scenarios, a more
+// sophisticated memory management strategy would be needed.
 var allocated [][]byte
 
 func printResponse(r *http.Response) {
