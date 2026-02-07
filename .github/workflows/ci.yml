@@ -60,3 +60,102 @@ jobs:
     - name: Run WASM with wasmtime
       run: |
         $HOME/.wasmtime/bin/wasmtime --dir .::/ main.wasm
+
+  test-wasi-http:
+    name: Test WASI-HTTP Server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Install TinyGo
+      run: |
+        wget https://github.com/tinygo-org/tinygo/releases/download/v0.34.0/tinygo_0.34.0_amd64.deb
+        sudo dpkg -i tinygo_0.34.0_amd64.deb
+
+    - name: Install wasm-tools
+      run: |
+        curl -L https://github.com/bytecodealliance/wasm-tools/releases/download/v1.219.1/wasm-tools-1.219.1-x86_64-linux.tar.gz | tar xz
+        sudo mv wasm-tools-1.219.1-x86_64-linux/wasm-tools /usr/local/bin/
+
+    - name: Install wasmtime
+      run: |
+        curl https://wasmtime.dev/install.sh -sSf | bash
+        echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
+    - name: Build WASI-HTTP component
+      working-directory: ./webserver/wasi-http
+      run: |
+        make clean
+        make default
+        ls -lh main.component.wasm
+
+    - name: Start WASI-HTTP server
+      working-directory: ./webserver/wasi-http
+      run: |
+        # Start the server in the background
+        $HOME/.wasmtime/bin/wasmtime serve -Scommon main.component.wasm > server.log 2>&1 &
+        echo $! > server.pid
+        # Wait for server to start
+        sleep 5
+        # Check if server is running
+        if ps -p $(cat server.pid) > /dev/null; then
+          echo "Server started successfully with PID $(cat server.pid)"
+        else
+          echo "Server failed to start"
+          cat server.log
+          exit 1
+        fi
+
+    - name: Test server with curl
+      run: |
+        # Test basic GET request
+        echo "Testing basic GET request..."
+        curl -v -f http://localhost:8080/ || exit 1
+        
+        # Test with path
+        echo "Testing GET request with path..."
+        curl -v -f http://localhost:8080/test || exit 1
+        
+        # Test with query parameters
+        echo "Testing GET request with query parameters..."
+        curl -v -f "http://localhost:8080/test?foo=bar&baz=qux" || exit 1
+        
+        # Test POST with body
+        echo "Testing POST request with body..."
+        curl -v -f -X POST -d "test body" http://localhost:8080/post || exit 1
+        
+        echo "All curl tests passed!"
+
+    - name: Show server logs
+      if: always()
+      working-directory: ./webserver/wasi-http
+      run: |
+        if [ -f server.log ]; then
+          echo "=== Server logs ==="
+          cat server.log
+        fi
+
+    - name: Stop WASI-HTTP server
+      if: always()
+      working-directory: ./webserver/wasi-http
+      run: |
+        if [ -f server.pid ]; then
+          PID=$(cat server.pid)
+          if ps -p $PID > /dev/null; then
+            echo "Stopping server with PID $PID"
+            kill $PID || true
+            sleep 2
+            # Force kill if still running
+            if ps -p $PID > /dev/null; then
+              kill -9 $PID || true
+            fi
+          fi
+        fi

@@ -1,4 +1,4 @@
-github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240903233842-b25e2e499927 h1:6d2BT8T/D7NZ/8sIGFn03t5fuvYlRaVQuxb0IyVzPo8=
-github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20240903233842-b25e2e499927/go.mod h1:xi8sLzp98HaAHL9V87SHzaHnO67qi6fyUVH2JRUA4Ds=
+github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20260207032918-775d7cbc66c4 h1:pm2uQgYGzibsPH8ndY92Dor9S1F65jgnk4HM8use6LY=
+github.com/dev-wasm/dev-wasm-go/lib v0.0.0-20260207032918-775d7cbc66c4/go.mod h1:IAZDQaELmHlCjhQkmfnFesp2pAymqgvlPak5JEdNu4c=
 go.bytecodealliance.org/cm v0.1.1-0.20250218151459-e57ac0139b6f h1:cHJcIruuUZwd7rDdcJHOVotufiO+qPfFwcxb6uCUVSI=
 go.bytecodealliance.org/cm v0.1.1-0.20250218151459-e57ac0139b6f/go.mod h1:NZ2UT0DyGhBfpIPOxPMCuG6g1YTR4YF3xweD7mHX5VQ=

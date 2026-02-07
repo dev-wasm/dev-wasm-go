@@ -9,23 +9,50 @@ import (
 	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 )
 
-// This is required for building the module for some reason
-// I don't think it should be. I'm probably doing something
-// wrong.
-//
-// fwiw, I think this is likely buggy and either leaks memory
-// or has race conditions.
+// cabi_realloc is required by the WASI Component Model for memory management.
+// This implementation allocates new memory and copies old data if needed.
+// Note: The allocated memory must not be garbage collected, so we keep a
+// reference to prevent GC from reclaiming it.
 //
 //go:wasmexport cabi_realloc
 //export cabi_realloc
 func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
+	// When freeing (newSize == 0), return align as per Canonical ABI spec
 	if newSize == 0 {
 		return align
 	}
-	arr := make([]uint8, newSize)
-	newPtr := unsafe.Pointer(unsafe.SliceData(arr))
-	return uint32(uintptr(newPtr))
+	
+	// Allocate new memory with extra space for alignment
+	// We need at most (align - 1) extra bytes to ensure proper alignment
+	newBuf := make([]byte, newSize+align-1)
+	rawPtr := uintptr(unsafe.Pointer(&newBuf[0]))
+	
+	// Align the pointer to the requested alignment
+	alignedPtr := (rawPtr + uintptr(align) - 1) &^ (uintptr(align) - 1)
+	newPtr := uint32(alignedPtr)
+	
+	// Copy old data to new location if reallocation
+	if ptr != 0 && oldSize > 0 {
+		oldBuf := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(ptr))), oldSize)
+		newSlice := unsafe.Slice((*byte)(unsafe.Pointer(alignedPtr)), newSize)
+		copySize := oldSize
+		if newSize < oldSize {
+			copySize = newSize
+		}
+		copy(newSlice[:copySize], oldBuf[:copySize])
+	}
+	
+	// Keep reference to prevent GC
+	allocated = append(allocated, newBuf)
+	
+	return newPtr
 }
+
+// allocated keeps references to allocated buffers to prevent GC
+// Note: This will grow unbounded, but WASM components are typically short-lived
+// request handlers where this is acceptable. For long-running scenarios, a more
+// sophisticated memory management strategy would be needed.
+var allocated [][]byte
 
 var count = 0
 
