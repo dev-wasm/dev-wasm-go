@@ -17,22 +17,29 @@ import (
 //go:wasmexport cabi_realloc
 //export cabi_realloc
 func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
+	// When freeing (newSize == 0), return align as per Canonical ABI spec
 	if newSize == 0 {
-		return 0
+		return align
 	}
 	
-	// Allocate new memory
-	newBuf := make([]byte, newSize)
-	newPtr := uint32(uintptr(unsafe.Pointer(&newBuf[0])))
+	// Allocate new memory with extra space for alignment
+	// Go's allocator typically returns 8-byte aligned memory
+	newBuf := make([]byte, newSize+align)
+	rawPtr := uintptr(unsafe.Pointer(&newBuf[0]))
+	
+	// Align the pointer to the requested alignment
+	alignedPtr := (rawPtr + uintptr(align) - 1) &^ (uintptr(align) - 1)
+	newPtr := uint32(alignedPtr)
 	
 	// Copy old data to new location if reallocation
 	if ptr != 0 && oldSize > 0 {
 		oldBuf := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(ptr))), oldSize)
+		newSlice := unsafe.Slice((*byte)(unsafe.Pointer(alignedPtr)), newSize)
 		copySize := oldSize
 		if newSize < oldSize {
 			copySize = newSize
 		}
-		copy(newBuf[:copySize], oldBuf[:copySize])
+		copy(newSlice[:copySize], oldBuf[:copySize])
 	}
 	
 	// Keep reference to prevent GC
