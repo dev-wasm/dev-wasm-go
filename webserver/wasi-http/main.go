@@ -9,23 +9,40 @@ import (
 	"github.com/dev-wasm/dev-wasm-go/lib/http/server/handler"
 )
 
-// This is required for building the module for some reason
-// I don't think it should be. I'm probably doing something
-// wrong.
-//
-// fwiw, I think this is likely buggy and either leaks memory
-// or has race conditions.
+// cabi_realloc is required by the WASI Component Model for memory management.
+// This implementation allocates new memory and copies old data if needed.
+// Note: The allocated memory must not be garbage collected, so we keep a
+// reference to prevent GC from reclaiming it.
 //
 //go:wasmexport cabi_realloc
 //export cabi_realloc
 func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
 	if newSize == 0 {
-		return align
+		return 0
 	}
-	arr := make([]uint8, newSize)
-	newPtr := unsafe.Pointer(unsafe.SliceData(arr))
-	return uint32(uintptr(newPtr))
+	
+	// Allocate new memory
+	newBuf := make([]byte, newSize)
+	newPtr := uint32(uintptr(unsafe.Pointer(&newBuf[0])))
+	
+	// Copy old data to new location if reallocation
+	if ptr != 0 && oldSize > 0 {
+		oldBuf := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(ptr))), oldSize)
+		copySize := oldSize
+		if newSize < oldSize {
+			copySize = newSize
+		}
+		copy(newBuf[:copySize], oldBuf[:copySize])
+	}
+	
+	// Keep reference to prevent GC
+	allocated = append(allocated, newBuf)
+	
+	return newPtr
 }
+
+// allocated keeps references to allocated buffers to prevent GC
+var allocated [][]byte
 
 var count = 0
 
