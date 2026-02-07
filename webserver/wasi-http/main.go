@@ -23,8 +23,8 @@ func wasmexport_cabi_realloc(ptr, oldSize, align, newSize uint32) uint32 {
 	}
 	
 	// Allocate new memory with extra space for alignment
-	// Go's allocator typically returns 8-byte aligned memory
-	newBuf := make([]byte, newSize+align)
+	// We need at most (align - 1) extra bytes to ensure proper alignment
+	newBuf := make([]byte, newSize+align-1)
 	rawPtr := uintptr(unsafe.Pointer(&newBuf[0]))
 	
 	// Align the pointer to the requested alignment
